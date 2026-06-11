@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Gym Tracker">
+<meta name="theme-color" content="#FF6B9D">
+<link rel="manifest" href="manifest.json">
+<title>Gym Tracker</title>
+<style>
+  :root {
+    --pink: #FF6B9D;
+    --pink-light: #FFB3D1;
+    --pink-card: #FFE4F0;
+    --pink-dark: #C44B8A;
+    --white: #FFFFFF;
+    --text: #2D2D2D;
+    --text-light: #777;
+    --grad: linear-gradient(135deg, #FF6B9D, #C44B8A);
+    --shadow: 0 2px 12px rgba(255,107,157,0.15);
+    --radius: 16px;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; font-family: -apple-system, 'Segoe UI', sans-serif; background: #f7f7f7; color: var(--text); overflow: hidden; }
+
+  /* Layout */
+  #app { display: flex; flex-direction: column; height: 100%; }
+  .header {
+    background: var(--grad);
+    padding: 16px 20px 14px;
+    padding-top: calc(16px + env(safe-area-inset-top, 0px));
+    color: white;
+    flex-shrink: 0;
+  }
+  .header h1 { font-size: 20px; font-weight: 700; }
+  .header .sub { font-size: 12px; opacity: .8; margin-top: 2px; }
+
+  .content { flex: 1; overflow-y: auto; padding: 16px; padding-bottom: 20px; -webkit-overflow-scrolling: touch; }
+
+  .nav {
+    display: flex;
+    background: white;
+    border-top: 1px solid #eee;
+    padding-bottom: calc(8px + var(--safe-bottom));
+    flex-shrink: 0;
+  }
+  .nav-btn {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    padding: 10px 4px 6px; border: none; background: none; cursor: pointer;
+    font-size: 10px; color: var(--text-light); gap: 3px; transition: color .2s;
+  }
+  .nav-btn .icon { font-size: 22px; }
+  .nav-btn.active { color: var(--pink); font-weight: 600; }
+
+  /* Cards */
+  .card {
+    background: white;
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--pink-card);
+  }
+  .card-title { font-size: 14px; font-weight: 700; color: var(--pink-dark); margin-bottom: 12px; }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--grad); color: white; border: none; border-radius: 50px;
+    font-size: 15px; font-weight: 600; cursor: pointer; padding: 14px 28px;
+    width: 100%; transition: opacity .15s; user-select: none;
+  }
+  .btn:active { opacity: .8; }
+  .btn-outline {
+    background: none; border: 2px solid var(--pink);
+    color: var(--pink); padding: 12px 20px;
+  }
+  .btn-sm { padding: 10px 18px; font-size: 13px; width: auto; }
+  .btn-ghost { background: var(--pink-card); color: var(--pink-dark); }
+
+  /* Setup */
+  #setup { display: flex; flex-direction: column; height: 100%; }
+  .setup-inner { flex: 1; overflow-y: auto; padding: 24px 20px; -webkit-overflow-scrolling: touch; }
+  .setup-header { text-align: center; margin-bottom: 28px; }
+  .setup-header .emoji { font-size: 48px; }
+  .setup-header h2 { font-size: 22px; font-weight: 800; color: var(--pink-dark); margin-top: 8px; }
+  .setup-header p { font-size: 13px; color: var(--text-light); margin-top: 4px; }
+
+  .step { display: none; }
+  .step.active { display: block; }
+  .step-label { font-size: 16px; font-weight: 700; margin-bottom: 14px; text-align: center; }
+  .step-num { font-size: 11px; color: var(--text-light); text-align: center; margin-bottom: 6px; }
+
+  .choice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .choice-grid.cols-1 { grid-template-columns: 1fr; }
+  .choice-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .choice-btn {
+    padding: 14px 10px; background: var(--pink-card); border: 2px solid transparent;
+    border-radius: 14px; cursor: pointer; font-size: 14px; font-weight: 600;
+    color: var(--text); text-align: center; transition: all .15s;
+  }
+  .choice-btn.selected { background: var(--pink); color: white; border-color: var(--pink-dark); }
+
+  .weight-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .height-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .choice-btn.small { padding: 11px 6px; font-size: 13px; border-radius: 12px; }
+
+  /* Macros display */
+  .macro-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
+  .macro-box {
+    background: var(--pink-card); border-radius: 12px; padding: 10px 6px;
+    text-align: center;
+  }
+  .macro-box .val { font-size: 20px; font-weight: 800; color: var(--pink-dark); }
+  .macro-box .lbl { font-size: 10px; color: var(--text-light); margin-top: 2px; }
+
+  /* Progress bars */
+  .prog-item { margin-bottom: 10px; }
+  .prog-header { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
+  .prog-bar { height: 8px; background: #f0f0f0; border-radius: 99px; overflow: hidden; }
+  .prog-fill { height: 100%; border-radius: 99px; transition: width .4s; }
+  .prog-fill.cal { background: var(--grad); }
+  .prog-fill.prot { background: linear-gradient(90deg,#4ecdc4,#2ecc71); }
+  .prog-fill.carb { background: linear-gradient(90deg,#f7971e,#ffd200); }
+  .prog-fill.fat { background: linear-gradient(90deg,#ff6b6b,#ee5a24); }
+
+  /* Food */
+  .cat-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 14px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .cat-tabs::-webkit-scrollbar { display: none; }
+  .cat-tab {
+    flex-shrink: 0; padding: 8px 14px; border-radius: 99px; border: 2px solid var(--pink-light);
+    background: white; font-size: 12px; font-weight: 600; color: var(--pink-dark); cursor: pointer; transition: all .15s;
+  }
+  .cat-tab.active { background: var(--pink); color: white; border-color: var(--pink); }
+
+  .food-list { display: flex; flex-direction: column; gap: 8px; }
+  .food-item {
+    padding: 13px 14px; background: var(--pink-card); border-radius: 12px;
+    cursor: pointer; transition: all .15s; border: 2px solid transparent;
+  }
+  .food-item:active { background: var(--pink-light); }
+  .food-item.selected { border-color: var(--pink); background: white; }
+  .food-item .name { font-size: 14px; font-weight: 600; }
+  .food-item .macros { font-size: 11px; color: var(--text-light); margin-top: 3px; }
+  .food-note { font-size: 11px; color: var(--text-light); text-align: center; padding: 6px 10px; background: #fff8e1; border-radius: 8px; margin-bottom: 10px; }
+
+  /* Slider panel */
+  .slider-panel {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+    background: white; border-radius: 24px 24px 0 0;
+    box-shadow: 0 -4px 30px rgba(0,0,0,.12);
+    padding: 20px 20px calc(20px + var(--safe-bottom));
+    transform: translateY(100%); transition: transform .3s cubic-bezier(.4,0,.2,1);
+  }
+  .slider-panel.open { transform: translateY(0); }
+  .slider-panel h3 { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+  .gram-display { font-size: 36px; font-weight: 800; color: var(--pink); text-align: center; margin: 10px 0; }
+  .gram-display span { font-size: 16px; font-weight: 500; color: var(--text-light); }
+  input[type=range] {
+    width: 100%; height: 6px; border-radius: 99px; outline: none; cursor: pointer;
+    -webkit-appearance: none; background: var(--pink-card);
+    margin: 8px 0 16px;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 26px; height: 26px; border-radius: 50%;
+    background: var(--pink); box-shadow: 0 2px 6px rgba(255,107,157,.4); cursor: pointer;
+  }
+  .preview-macros { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-bottom: 16px; }
+  .preview-box { text-align: center; background: var(--pink-card); border-radius: 10px; padding: 8px 4px; }
+  .preview-box .v { font-size: 16px; font-weight: 700; color: var(--pink-dark); }
+  .preview-box .l { font-size: 10px; color: var(--text-light); }
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.3); z-index: 99; display: none; }
+  .overlay.open { display: block; }
+
+  /* Log */
+  .log-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: var(--pink-card); border-radius: 10px; margin-bottom: 6px; }
+  .log-item .info .nm { font-size: 13px; font-weight: 600; }
+  .log-item .info .mc { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+  .log-item .del { font-size: 18px; color: #ccc; cursor: pointer; padding: 4px 8px; }
+  .log-total { background: var(--grad); color: white; border-radius: 12px; padding: 12px 14px; margin-top: 6px; }
+  .log-total .row { display: flex; justify-content: space-between; font-size: 13px; }
+  .log-total .row + .row { margin-top: 6px; }
+
+  /* Workout */
+  .muscle-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 14px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .muscle-tabs::-webkit-scrollbar { display: none; }
+  .muscle-tab {
+    flex-shrink: 0; padding: 8px 14px; border-radius: 99px; border: 2px solid var(--pink-light);
+    background: white; font-size: 12px; font-weight: 600; color: var(--pink-dark); cursor: pointer; transition: all .15s;
+  }
+  .muscle-tab.active { background: var(--pink); color: white; border-color: var(--pink); }
+
+  .ex-item { padding: 12px 14px; background: var(--pink-card); border-radius: 12px; margin-bottom: 8px; cursor: pointer; transition: all .15s; }
+  .ex-item:active { background: var(--pink-light); }
+  .ex-item .nm { font-size: 14px; font-weight: 600; }
+  .ex-item .last { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+
+  /* Sets panel */
+  .sets-panel {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+    background: white; border-radius: 24px 24px 0 0;
+    box-shadow: 0 -4px 30px rgba(0,0,0,.12);
+    padding: 20px 20px calc(20px + var(--safe-bottom));
+    transform: translateY(100%); transition: transform .3s cubic-bezier(.4,0,.2,1);
+    max-height: 85vh; overflow-y: auto;
+  }
+  .sets-panel.open { transform: translateY(0); }
+  .set-row { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .set-num { font-size: 12px; color: var(--text-light); font-weight: 600; text-align: center; }
+  .set-input {
+    text-align: center; border: 2px solid var(--pink-light); border-radius: 10px;
+    padding: 10px 4px; font-size: 15px; font-weight: 700; color: var(--text);
+    outline: none; background: white; width: 100%;
+  }
+  .set-input:focus { border-color: var(--pink); }
+  .del-set { color: #ccc; cursor: pointer; font-size: 18px; padding: 4px; }
+  .set-headers { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 8px; margin-bottom: 6px; }
+  .set-headers span { text-align: center; font-size: 11px; color: var(--text-light); font-weight: 600; }
+  .vol-compare { background: var(--pink-card); border-radius: 10px; padding: 10px 12px; margin: 10px 0; font-size: 13px; }
+
+  /* Timer */
+  .timer-wrap { text-align: center; }
+  .timer-display { font-size: 52px; font-weight: 800; color: var(--pink); line-height: 1; margin: 8px 0; font-variant-numeric: tabular-nums; }
+  .timer-btns { display: flex; gap: 8px; justify-content: center; margin-top: 8px; }
+  .timer-btn { padding: 12px 16px; background: var(--pink-card); border: none; border-radius: 12px; font-size: 14px; font-weight: 700; color: var(--pink-dark); cursor: pointer; flex: 1; transition: all .15s; }
+  .timer-btn:active { background: var(--pink-light); }
+  .timer-btn.running { background: var(--grad); color: white; }
+
+  /* Chart */
+  .chart-wrap { overflow-x: auto; }
+  svg.chart { display: block; }
+
+  /* Home big nums */
+  .big-nums { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .big-num-box { background: white; border-radius: 14px; padding: 14px 12px; text-align: center; border: 1px solid var(--pink-card); box-shadow: var(--shadow); }
+  .big-num-box .num { font-size: 28px; font-weight: 800; color: var(--pink); }
+  .big-num-box .lbl { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+  .big-num-box .unit { font-size: 13px; color: var(--text-light); }
+
+  /* Settings */
+  .setting-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+  .setting-row .lbl { font-size: 14px; font-weight: 600; }
+  .setting-row .val { font-size: 14px; color: var(--pink); font-weight: 700; }
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+  .stat-box { background: var(--pink-card); border-radius: 12px; padding: 12px; text-align: center; }
+  .stat-box .v { font-size: 20px; font-weight: 800; color: var(--pink-dark); }
+  .stat-box .l { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+
+  /* Utils */
+  .hidden { display: none !important; }
+  .flex-row { display: flex; gap: 8px; }
+  .mt8 { margin-top: 8px; }
+  .text-center { text-align: center; }
+  .empty { text-align: center; color: var(--text-light); padding: 24px 0; font-size: 14px; }
+  .tag { display: inline-block; background: var(--pink-card); color: var(--pink-dark); padding: 3px 10px; border-radius: 99px; font-size: 11px; font-weight: 600; }
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ===== SETUP ===== -->
+<div id="setup">
+  <div style="background:var(--grad);padding:20px 20px 18px;padding-top:calc(20px + env(safe-area-inset-top,0px));color:white;flex-shrink:0;">
+    <h1 style="font-size:22px;font-weight:800;">💪 Gym Tracker</h1>
+    <p style="font-size:13px;opacity:.8;margin-top:4px;">إعداد الملف الشخصي</p>
+  </div>
+  <div class="setup-inner">
+    <!-- Step 1: Gender -->
+    <div class="step active" id="step1">
+      <div class="step-num">١ من ٥</div>
+      <div class="step-label">ما جنسك؟</div>
+      <div class="choice-grid cols-1" style="max-width:280px;margin:auto;gap:12px;">
+        <div class="choice-btn" onclick="select(this,'gender','male')">👨 ذكر</div>
+        <div class="choice-btn" onclick="select(this,'gender','female')">👩 أنثى</div>
+      </div>
+    </div>
+    <!-- Step 2: Age -->
+    <div class="step" id="step2">
+      <div class="step-num">٢ من ٥</div>
+      <div class="step-label">كم عمرك؟</div>
+      <div class="choice-grid cols-1" style="max-width:280px;margin:auto;gap:10px;">
+        <div class="choice-btn" onclick="select(this,'age',20)">أقل من 25</div>
+        <div class="choice-btn" onclick="select(this,'age',30)">25 – 35</div>
+        <div class="choice-btn" onclick="select(this,'age',40)">35 – 45</div>
+        <div class="choice-btn" onclick="select(this,'age',50)">أكثر من 45</div>
+      </div>
+    </div>
+    <!-- Step 3: Weight -->
+    <div class="step" id="step3">
+      <div class="step-num">٣ من ٥</div>
+      <div class="step-label">كم وزنك؟ (كيلو)</div>
+      <div class="weight-grid" id="weightGrid"></div>
+    </div>
+    <!-- Step 4: Height -->
+    <div class="step" id="step4">
+      <div class="step-num">٤ من ٥</div>
+      <div class="step-label">كم طولك؟ (سم)</div>
+      <div class="height-grid" id="heightGrid"></div>
+    </div>
+    <!-- Step 5: Goal -->
+    <div class="step" id="step5">
+      <div class="step-num">٥ من ٥</div>
+      <div class="step-label">ما هدفك؟</div>
+      <div class="choice-grid cols-1" style="max-width:280px;margin:auto;gap:12px;">
+        <div class="choice-btn" onclick="select(this,'goal','bulk')">💪 تضخيم</div>
+        <div class="choice-btn" onclick="select(this,'goal','cut')">🔥 تنشيف</div>
+        <div class="choice-btn" onclick="select(this,'goal','recomp')">⚖️ ريكومب</div>
+      </div>
+    </div>
+  </div>
+  <div style="padding:0 20px 16px;padding-bottom:calc(16px + var(--safe-bottom));flex-shrink:0;">
+    <button class="btn" onclick="nextStep()" id="nextBtn" disabled style="opacity:.5">التالي ←</button>
+  </div>
+</div>
+
+<!-- ===== MAIN APP ===== -->
+<div id="mainApp" class="hidden" style="display:none;flex-direction:column;height:100%;">
+  <div class="header" id="mainHeader">
+    <h1 id="headerTitle">الرئيسية</h1>
+    <div class="sub" id="headerSub"></div>
+  </div>
+
+  <!-- Tab: Home -->
+  <div class="content" id="tabHome" style="display:block;">
+    <div class="big-nums" id="homeNums"></div>
+    <div class="card">
+      <div class="card-title">📊 التقدم اليوم</div>
+      <div id="homeProgress"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">⏱ مؤقت الراحة</div>
+      <div class="timer-wrap">
+        <div class="timer-display" id="timerDisplay">00:00</div>
+        <div class="timer-btns">
+          <button class="timer-btn" onclick="startTimer(60)">60ث</button>
+          <button class="timer-btn" onclick="startTimer(90)">90ث</button>
+          <button class="timer-btn" onclick="startTimer(120)">120ث</button>
+          <button class="timer-btn" id="timerStop" onclick="stopTimer()" style="display:none;">إيقاف</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📈 آخر 7 أيام – السعرات</div>
+      <div class="chart-wrap" id="weekChart"></div>
+    </div>
+  </div>
+
+  <!-- Tab: Food -->
+  <div class="content" id="tabFood" style="display:none;">
+    <div class="card">
+      <div class="card-title">🍽 تتبع الوجبات</div>
+      <div id="foodProgress"></div>
+    </div>
+    <div class="card" style="padding-bottom:10px;">
+      <div class="card-title">➕ أضف طعام</div>
+      <div class="cat-tabs" id="catTabs"></div>
+      <div id="foodNote" class="food-note hidden"></div>
+      <div class="food-list" id="foodList"></div>
+    </div>
+    <div class="card" id="foodLogCard">
+      <div class="card-title">📋 سجل اليوم</div>
+      <div id="foodLog"></div>
+    </div>
+  </div>
+
+  <!-- Tab: Workout -->
+  <div class="content" id="tabWorkout" style="display:none;">
+    <div class="card">
+      <div class="card-title">🏋️ تسجيل التمارين</div>
+      <div class="muscle-tabs" id="muscleTabs"></div>
+      <div id="exList"></div>
+    </div>
+  </div>
+
+  <!-- Tab: Settings -->
+  <div class="content" id="tabSettings" style="display:none;">
+    <div class="card">
+      <div class="card-title">📊 الملف الشخصي</div>
+      <div id="statsGrid" class="stats-grid"></div>
+      <div id="settingRows"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">🎯 الأهداف اليومية</div>
+      <div id="goalRows"></div>
+    </div>
+    <button class="btn btn-outline mt8" onclick="resetApp()">🔄 إعادة الإعداد</button>
+  </div>
+
+  <!-- Bottom Nav -->
+  <nav class="nav">
+    <button class="nav-btn active" onclick="switchTab('Home')" id="navHome"><span class="icon">🏠</span>الرئيسية</button>
+    <button class="nav-btn" onclick="switchTab('Food')" id="navFood"><span class="icon">🍽</span>أكل</button>
+    <button class="nav-btn" onclick="switchTab('Workout')" id="navWorkout"><span class="icon">🏋️</span>تمارين</button>
+    <button class="nav-btn" onclick="switchTab('Settings')" id="navSettings"><span class="icon">⚙️</span>إعدادات</button>
+  </nav>
+</div>
+
+<!-- Slider Panel -->
+<div class="overlay" id="overlay" onclick="closeSlider()"></div>
+<div class="slider-panel" id="sliderPanel">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+    <h3 id="sliderFoodName">—</h3>
+    <button onclick="closeSlider()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#ccc;">✕</button>
+  </div>
+  <div class="gram-display"><span id="sliderGrams">100</span> <span>g</span></div>
+  <input type="range" id="gramSlider" min="10" max="500" step="5" value="100" oninput="updateSlider()">
+  <div class="preview-macros" id="previewMacros"></div>
+  <button class="btn" onclick="addFoodEntry()">✅ أضف للسجل</button>
+</div>
+
+<!-- Sets Panel -->
+<div class="sets-panel" id="setsPanel">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+    <h3 id="setPanelName">—</h3>
+    <button onclick="closeSets()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#ccc;">✕</button>
+  </div>
+  <div class="vol-compare" id="volCompare" style="display:none;"></div>
+  <div class="set-headers">
+    <span>سيت</span><span>كيلو</span><span>تكرار</span><span></span>
+  </div>
+  <div id="setRows"></div>
+  <div class="flex-row mt8">
+    <button class="btn btn-ghost btn-sm" onclick="addSet()">+ أضف سيت</button>
+    <button class="btn btn-sm" onclick="saveSets()">💾 حفظ</button>
+  </div>
+</div>
+
+<script>
+// ========================
+// DATA
+// ========================
+const FOODS = {
+  'بروتينات': [
+    {n:'صدر دجاج نيء', cal:110, p:23, c:0, f:1.2},
+    {n:'بيضة كاملة (55g)', cal:155, p:13, c:1.1, f:11, unit:55},
+    {n:'بياض بيض', cal:52, p:11, c:0.7, f:0.2},
+    {n:'لحم بقر مفروم 15%', cal:215, p:18, c:0, f:15},
+    {n:'تونة بالماء', cal:116, p:26, c:0, f:1},
+    {n:'سلمون', cal:208, p:20, c:0, f:13},
+    {n:'قريدس', cal:99, p:21, c:0.2, f:1.1},
+  ],
+  'ألبان': [
+    {n:'حليب كامل 3.5%', cal:61, p:3.2, c:4.8, f:3.5},
+    {n:'حليب منزوع الدسم', cal:35, p:3.4, c:5, f:0.1},
+    {n:'زبادي كامل الدسم', cal:97, p:3.5, c:4.7, f:3.3},
+    {n:'زبادي منزوع الدسم', cal:56, p:4, c:7.7, f:0.4},
+    {n:'زبادي يوناني كامل', cal:115, p:9, c:3.6, f:7.5},
+    {n:'زبادي يوناني خالي', cal:59, p:10, c:3.6, f:0.4},
+    {n:'لبنة كاملة', cal:170, p:8, c:4, f:13},
+    {n:'لبنة منزوعة', cal:95, p:9, c:5, f:3},
+    {n:'جبنة قريش كاملة', cal:206, p:12, c:2.7, f:16},
+    {n:'جبنة قريش منزوعة', cal:98, p:14, c:3.4, f:3},
+    {n:'جبنة بيضاء كاملة', cal:264, p:14, c:2, f:22},
+    {n:'جبنة بيضاء خفيفة', cal:180, p:16, c:2, f:12},
+    {n:'جبنة صفراء كاملة', cal:402, p:25, c:1.3, f:33},
+    {n:'جبنة صفراء خفيفة', cal:284, p:28, c:1.5, f:18},
+    {n:'جبنة مشللة', cal:330, p:21, c:1, f:26},
+    {n:'حلوم كامل', cal:316, p:22, c:2, f:24},
+    {n:'جبنة بقرية كاملة', cal:357, p:22, c:2, f:29},
+    {n:'جبنة بقرية خفيفة', cal:255, p:24, c:3, f:16},
+    {n:'جبنة غنم كاملة', cal:374, p:21, c:1, f:32},
+    {n:'جبنة غنم خفيفة', cal:268, p:23, c:2, f:18},
+  ],
+  'نشويات': [
+    {n:'أرز أبيض نيء', cal:365, p:7, c:80, f:0.7},
+    {n:'أرز بني نيء', cal:370, p:8, c:77, f:2.7},
+    {n:'برغل جاف', cal:342, p:12, c:70, f:1.3},
+    {n:'معكرونة جافة', cal:371, p:13, c:74, f:1.5},
+    {n:'شوفان جاف', cal:389, p:17, c:66, f:7},
+    {n:'خبز أبيض (شريحة)', cal:265, p:9, c:49, f:3, unit:30},
+    {n:'خبز أسمر (شريحة)', cal:247, p:13, c:41, f:4, unit:30},
+    {n:'بطاطا نيئة', cal:77, p:2, c:17, f:0.1},
+    {n:'بطاطا حلوة', cal:86, p:1.6, c:20, f:0.1},
+    {n:'عدس أحمر', cal:352, p:25, c:60, f:1.1},
+    {n:'عدس أخضر', cal:353, p:26, c:60, f:1.1},
+    {n:'حمص جاف', cal:378, p:20, c:63, f:6},
+    {n:'فاصوليا بيضاء', cal:333, p:24, c:60, f:0.8},
+    {n:'فول مدمس', cal:341, p:26, c:58, f:1.4},
+  ],
+  'دهون': [
+    {n:'زيت زيتون', cal:884, p:0, c:0, f:100},
+    {n:'زبدة فول سوداني', cal:588, p:25, c:20, f:50},
+    {n:'أفوكادو', cal:160, p:2, c:9, f:15},
+    {n:'مكسرات مشكلة', cal:607, p:20, c:21, f:54},
+  ],
+  'فواكه': [
+    {n:'موز', cal:89, p:1.1, c:23, f:0.3},
+    {n:'تفاح', cal:52, p:0.3, c:14, f:0.2},
+    {n:'تمر (حبة 8g)', cal:282, p:2.5, c:75, f:0.4, unit:8},
+  ],
+  'خضار': [
+    {n:'بروكلي', cal:34, p:2.8, c:7, f:0.4},
+    {n:'سبانخ', cal:23, p:2.9, c:3.6, f:0.4},
+    {n:'خيار', cal:16, p:0.7, c:3.6, f:0.1},
+    {n:'طماطم', cal:18, p:0.9, c:3.9, f:0.2},
+    {n:'جزر', cal:41, p:0.9, c:10, f:0.2},
+    {n:'كوسا', cal:17, p:1.2, c:3.1, f:0.3},
+  ],
+  'وجبات': [
+    {n:'شاورما دجاج', cal:220, p:18, c:15, f:9},
+    {n:'برغر دجاج', cal:270, p:20, c:25, f:9},
+    {n:'بيتزا قطعة', cal:266, p:11, c:33, f:10},
+    {n:'فلافل', cal:333, p:13, c:32, f:18},
+  ],
+};
+const FOOD_NOTES = {
+  'نشويات': 'الكميات قبل الطبخ — الوزن المسلوق يختلف',
+  'ألبان': 'اختر الدسامة الصحيحة للحساب الدقيق',
+};
+
+const EXERCISES = {
+  'صدر': ['بنش بريس بار','بنش بريس دمبل','انكلاين بار','انكلاين دمبل','ديكلاين بنش','كروس أوفر','بترفلاي','ضغط أرضي'],
+  'ظهر': ['ديدليفت','بار رو','دمبل رو','لات بولداون','سيتد رو','بول أب','هايبر اكستنشن','فيس بول'],
+  'أكتاف': ['أوفرهيد بريس بار','أوفرهيد دمبل','لاترال ريز','فرونت ريز','ريير ديلت فلاي','أرنولد بريس'],
+  'أرجل': ['سكوات بار','ليج بريس','ليج اكستنشن','ليج كيرل','ديدليفت رومانياني','كالف ريز','هاك سكوات','لانجز'],
+  'ذراعين': ['باي كيرل بار','باي دمبل','هامر كيرل','تراي بوش داون','تراي اوفرهيد','تراي ديبس','تراي بار'],
+  'كور': ['كرانش','ليج ريز','بلانك','روسيان تويست','كيبل كرانش','AB ويل'],
+};
+
+// ========================
+// DB
+// ========================
+let db;
+function openDB() {
+  return new Promise((res, rej) => {
+    const req = indexedDB.open('GymTrackerDB', 2);
+    req.onupgradeneeded = e => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains('settings')) d.createObjectStore('settings');
+      if (!d.objectStoreNames.contains('food_log')) {
+        const fs = d.createObjectStore('food_log', {keyPath:'id', autoIncrement:true});
+        fs.createIndex('date','date');
+      }
+      if (!d.objectStoreNames.contains('workouts')) {
+        const ws = d.createObjectStore('workouts', {keyPath:'id', autoIncrement:true});
+        ws.createIndex('exercise','exercise');
+        ws.createIndex('date','date');
+      }
+    };
+    req.onsuccess = e => { db = e.target.result; res(db); };
+    req.onerror = () => rej(req.error);
+  });
+}
+function dbGet(store, key) {
+  return new Promise((res,rej)=>{
+    const tx = db.transaction(store,'readonly');
+    const req = tx.objectStore(store).get(key);
+    req.onsuccess = ()=>res(req.result);
+    req.onerror = ()=>rej(req.error);
+  });
+}
+function dbPut(store, key, val) {
+  return new Promise((res,rej)=>{
+    const tx = db.transaction(store,'readwrite');
+    const req = tx.objectStore(store).put(val, key);
+    req.onsuccess = ()=>res();
+    req.onerror = ()=>rej(req.error);
+  });
+}
+function dbAdd(store, val) {
+  return new Promise((res,rej)=>{
+    const tx = db.transaction(store,'readwrite');
+    const req = tx.objectStore(store).add(val);
+    req.onsuccess = ()=>res(req.result);
+    req.onerror = ()=>rej(req.error);
+  });
+}
+function dbDelete(store, key) {
+  return new Promise((res,rej)=>{
+    const tx = db.transaction(store,'readwrite');
+    const req = tx.objectStore(store).delete(key);
+    req.onsuccess = ()=>res();
+    req.onerror = ()=>rej(req.error);
+  });
+}
+function dbGetByIndex(store, index, val) {
+  return new Promise((res,rej)=>{
+    const tx = db.transaction(store,'readonly');
+    const req = tx.objectStore(store).index(index).getAll(val);
+    req.onsuccess = ()=>res(req.result);
+    req.onerror = ()=>rej(req.error);
+  });
+}
+function dbGetAll(store) {
+  return new Promise((res,rej)=>{
+    const tx = db.transaction(store,'readonly');
+    const req = tx.objectStore(store).getAll();
+    req.onsuccess = ()=>res(req.result);
+    req.onerror = ()=>rej(req.error);
+  });
+}
+
+// ========================
+// SETUP
+// ========================
+let setupData = {};
+let currentStep = 1;
+const TOTAL_STEPS = 5;
+
+function buildWeightGrid() {
+  const g = document.getElementById('weightGrid');
+  g.innerHTML='';
+  for(let w=50;w<=120;w+=5) {
+    const b=document.createElement('div');
+    b.className='choice-btn small';
+    b.textContent=w;
+    b.onclick=()=>select(b,'weight',w);
+    g.appendChild(b);
+  }
+}
+function buildHeightGrid() {
+  const g = document.getElementById('heightGrid');
+  g.innerHTML='';
+  for(let h=155;h<=195;h+=5) {
+    const b=document.createElement('div');
+    b.className='choice-btn small';
+    b.textContent=h;
+    b.onclick=()=>select(b,'height',h);
+    g.appendChild(b);
+  }
+}
+
+function select(el, key, val) {
+  const parent = el.closest('.choice-grid') || el.closest('.weight-grid') || el.closest('.height-grid');
+  parent.querySelectorAll('.choice-btn').forEach(b=>b.classList.remove('selected'));
+  el.classList.add('selected');
+  setupData[key] = val;
+  document.getElementById('nextBtn').disabled = false;
+  document.getElementById('nextBtn').style.opacity = '1';
+}
+
+function nextStep() {
+  const keys = ['gender','age','weight','height','goal'];
+  if (!setupData[keys[currentStep-1]]) return;
+  if (currentStep < TOTAL_STEPS) {
+    document.getElementById('step'+currentStep).classList.remove('active');
+    currentStep++;
+    document.getElementById('step'+currentStep).classList.add('active');
+    const nextKey = keys[currentStep-1];
+    document.getElementById('nextBtn').disabled = !setupData[nextKey];
+    document.getElementById('nextBtn').style.opacity = setupData[nextKey] ? '1' : '.5';
+    if (currentStep === TOTAL_STEPS) {
+      document.getElementById('nextBtn').textContent = 'ابدأ 🚀';
+    }
+  } else {
+    finishSetup();
+  }
+}
+
+function calcMacros(d) {
+  // Mifflin-St Jeor
+  let bmr;
+  if (d.gender==='male') bmr = 10*d.weight + 6.25*d.height - 5*d.age + 5;
+  else bmr = 10*d.weight + 6.25*d.height - 5*d.age - 161;
+  const tdee = Math.round(bmr * 1.55);
+  let cal;
+  if (d.goal==='bulk') cal = tdee+300;
+  else if (d.goal==='cut') cal = tdee-400;
+  else cal = tdee;
+
+  let prot, fatPct;
+  if (d.goal==='bulk') { prot=2.2; fatPct=0.25; }
+  else if (d.goal==='cut') { prot=2.5; fatPct=0.25; }
+  else { prot=2.2; fatPct=0.30; }
+
+  const protG = Math.round(prot * d.weight);
+  const fatCal = Math.round(cal * fatPct);
+  const fatG = Math.round(fatCal / 9);
+  const protCal = protG * 4;
+  const carbG = Math.round((cal - protCal - fatCal) / 4);
+  const bmi = (d.weight / ((d.height/100)**2)).toFixed(1);
+  // Devine ideal weight
+  let ideal;
+  if (d.gender==='male') ideal = Math.round(50 + 2.3*((d.height-152.4)/2.54));
+  else ideal = Math.round(45.5 + 2.3*((d.height-152.4)/2.54));
+
+  return { tdee, cal, protG, carbG, fatG, bmi, ideal };
+}
+
+async function finishSetup() {
+  const m = calcMacros(setupData);
+  const profile = { ...setupData, ...m };
+  await dbPut('settings','profile', profile);
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'flex';
+  initApp(profile);
+}
+
+// ========================
+// APP STATE
+// ========================
+let profile = null;
+let todayFoodLog = [];
+let selectedFood = null;
+let currentEx = null;
+let currentSets = [];
+let timerInterval = null;
+let timerEnd = 0;
+
+function todayKey() {
+  return new Date().toISOString().slice(0,10);
+}
+
+async function initApp(p) {
+  profile = p;
+  todayFoodLog = await dbGetByIndex('food_log','date',todayKey());
+  renderHome();
+  buildFoodTab();
+  buildWorkoutTab();
+  buildSettingsTab();
+}
+
+// ========================
+// TAB SWITCHING
+// ========================
+function switchTab(name) {
+  ['Home','Food','Workout','Settings'].forEach(t => {
+    document.getElementById('tab'+t).style.display = t===name ? 'block' : 'none';
+    document.getElementById('nav'+t).classList.toggle('active', t===name);
+  });
+  const titles = {Home:'الرئيسية 🏠', Food:'تتبع الأكل 🍽', Workout:'التمارين 🏋️', Settings:'الإعدادات ⚙️'};
+  document.getElementById('headerTitle').textContent = titles[name];
+  if (name==='Home') renderHome();
+  if (name==='Food') renderFoodProgress();
+  if (name==='Settings') buildSettingsTab();
+}
+
+// ========================
+// HOME
+// ========================
+function renderHome() {
+  if (!profile) return;
+  const totals = calcTodayTotals();
+  const remCal = Math.max(0, profile.cal - totals.cal);
+  const remP = Math.max(0, profile.protG - totals.prot);
+  const remC = Math.max(0, profile.carbG - totals.carb);
+  const remF = Math.max(0, profile.fatG - totals.fat);
+
+  document.getElementById('homeNums').innerHTML = `
+    <div class="big-num-box"><div class="num">${remCal}</div><div class="lbl">سعرات متبقية</div><div class="unit">kcal</div></div>
+    <div class="big-num-box"><div class="num">${remP}g</div><div class="lbl">بروتين متبقي</div></div>
+    <div class="big-num-box"><div class="num">${remC}g</div><div class="lbl">كارب متبقي</div></div>
+    <div class="big-num-box"><div class="num">${remF}g</div><div class="lbl">دهون متبقية</div></div>
+  `;
+  renderProgressBars('homeProgress', totals);
+  renderWeekChart();
+}
+
+function calcTodayTotals() {
+  return todayFoodLog.reduce((a,e)=>({
+    cal: a.cal+(e.cal||0), prot: a.prot+(e.prot||0),
+    carb: a.carb+(e.carb||0), fat: a.fat+(e.fat||0)
+  }), {cal:0,prot:0,carb:0,fat:0});
+}
+
+function renderProgressBars(containerId, totals) {
+  const bars = [
+    {label:'سعرات', cur:Math.round(totals.cal), target:profile.cal, cls:'cal', unit:'kcal'},
+    {label:'بروتين', cur:Math.round(totals.prot), target:profile.protG, cls:'prot', unit:'g'},
+    {label:'كارب', cur:Math.round(totals.carb), target:profile.carbG, cls:'carb', unit:'g'},
+    {label:'دهون', cur:Math.round(totals.fat), target:profile.fatG, cls:'fat', unit:'g'},
+  ];
+  document.getElementById(containerId).innerHTML = bars.map(b=>`
+    <div class="prog-item">
+      <div class="prog-header"><span>${b.label}</span><span>${b.cur} / ${b.target} ${b.unit}</span></div>
+      <div class="prog-bar"><div class="prog-fill ${b.cls}" style="width:${Math.min(100,(b.cur/b.target*100)).toFixed(1)}%"></div></div>
+    </div>
+  `).join('');
+}
+
+async function renderWeekChart() {
+  const today = new Date();
+  const days = [];
+  for (let i=6;i>=0;i--) {
+    const d = new Date(today); d.setDate(d.getDate()-i);
+    const k = d.toISOString().slice(0,10);
+    days.push(k);
+  }
+  const allLogs = await dbGetAll('food_log');
+  const data = days.map(d => {
+    const entries = allLogs.filter(e=>e.date===d);
+    return entries.reduce((s,e)=>s+(e.cal||0),0);
+  });
+  const maxVal = Math.max(...data, profile.cal, 1);
+  const W=320, H=120, PAD=10, BAR_W=32, GAP=6;
+  const totalW = days.length*(BAR_W+GAP);
+  const labels = days.map(d=>{const dt=new Date(d);return ['أح','إث','ث','أر','خ','ج','س'][dt.getDay()];});
+  let barsHTML = '';
+  data.forEach((v,i)=>{
+    const barH = Math.max(4, (v/maxVal)*(H-30));
+    const x = PAD + i*(BAR_W+GAP);
+    const y = H-PAD-barH-14;
+    const isToday = days[i]===todayKey();
+    barsHTML += `
+      <rect x="${x}" y="${y+14}" width="${BAR_W}" height="${barH}" rx="6"
+        fill="${isToday?'url(#grad)':'#FFB3D1'}"/>
+      <text x="${x+BAR_W/2}" y="${y+10}" text-anchor="middle" font-size="9" fill="#777">${v>0?v:''}</text>
+      <text x="${x+BAR_W/2}" y="${H}" text-anchor="middle" font-size="10" fill="${isToday?'#FF6B9D':'#aaa'}" font-weight="${isToday?700:400}">${labels[i]}</text>
+    `;
+  });
+  document.getElementById('weekChart').innerHTML = `
+    <svg class="chart" viewBox="0 0 ${PAD*2+totalW} ${H+2}" style="width:100%;max-width:400px;">
+      <defs>
+        <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#FF6B9D"/>
+          <stop offset="100%" stop-color="#C44B8A"/>
+        </linearGradient>
+      </defs>
+      ${barsHTML}
+    </svg>
+  `;
+}
+
+// ========================
+// TIMER
+// ========================
+function startTimer(secs) {
+  stopTimer();
+  timerEnd = Date.now() + secs*1000;
+  document.getElementById('timerStop').style.display='';
+  timerInterval = setInterval(()=>{
+    const left = Math.max(0, Math.ceil((timerEnd - Date.now())/1000));
+    const m = String(Math.floor(left/60)).padStart(2,'0');
+    const s = String(left%60).padStart(2,'0');
+    document.getElementById('timerDisplay').textContent = `${m}:${s}`;
+    if (left===0) { stopTimer(); }
+  }, 200);
+}
+function stopTimer() {
+  clearInterval(timerInterval);
+  document.getElementById('timerDisplay').textContent='00:00';
+  document.getElementById('timerStop').style.display='none';
+}
+
+// ========================
+// FOOD TAB
+// ========================
+function buildFoodTab() {
+  const cats = Object.keys(FOODS);
+  const tabs = document.getElementById('catTabs');
+  tabs.innerHTML = cats.map((c,i)=>`
+    <div class="cat-tab${i===0?' active':''}" onclick="selectFoodCat('${c}',this)">${c}</div>
+  `).join('');
+  showFoodCat(cats[0]);
+  renderFoodLog();
+  renderFoodProgress();
+}
+
+function selectFoodCat(cat, el) {
+  document.querySelectorAll('.cat-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  showFoodCat(cat);
+}
+
+function showFoodCat(cat) {
+  const note = FOOD_NOTES[cat];
+  const noteEl = document.getElementById('foodNote');
+  if (note) { noteEl.textContent=note; noteEl.classList.remove('hidden'); }
+  else noteEl.classList.add('hidden');
+
+  const list = document.getElementById('foodList');
+  list.innerHTML = FOODS[cat].map(f=>`
+    <div class="food-item" onclick="openSlider(${JSON.stringify(f).replace(/"/g,'&quot;')})">
+      <div class="name">${f.n}</div>
+      <div class="macros">سعرات ${f.cal} · بروتين ${f.p}g · كارب ${f.c}g · دهون ${f.f}g <span style="color:#bbb">/ 100g</span></div>
+    </div>
+  `).join('');
+}
+
+function renderFoodProgress() {
+  if (!profile) return;
+  const totals = calcTodayTotals();
+  renderProgressBars('foodProgress', totals);
+}
+
+function renderFoodLog() {
+  const log = document.getElementById('foodLog');
+  if (!todayFoodLog.length) {
+    log.innerHTML = '<div class="empty">لم تضف أي وجبة بعد 🍽</div>';
+    return;
+  }
+  const totals = todayFoodLog.reduce((a,e)=>({
+    cal:a.cal+e.cal, prot:a.prot+e.prot, carb:a.carb+e.carb, fat:a.fat+e.fat
+  }), {cal:0,prot:0,carb:0,fat:0});
+
+  log.innerHTML = todayFoodLog.map(e=>`
+    <div class="log-item">
+      <div class="info">
+        <div class="nm">${e.name} <span style="color:var(--pink-dark);font-size:11px;">${e.grams}g</span></div>
+        <div class="mc">${Math.round(e.cal)} kcal · P ${e.prot.toFixed(1)}g · C ${e.carb.toFixed(1)}g · F ${e.fat.toFixed(1)}g</div>
+      </div>
+      <div class="del" onclick="deleteFoodEntry(${e.id})">🗑</div>
+    </div>
+  `).join('') + `
+    <div class="log-total">
+      <div class="row"><span>المجموع</span><span>${Math.round(totals.cal)} kcal</span></div>
+      <div class="row"><span>بروتين</span><span>${totals.prot.toFixed(1)}g</span></div>
+      <div class="row" style="direction:rtl"><span>كارب</span><span>${totals.carb.toFixed(1)}g</span></div>
+      <div class="row"><span>دهون</span><span>${totals.fat.toFixed(1)}g</span></div>
+    </div>
+  `;
+}
+
+// ========================
+// SLIDER
+// ========================
+function openSlider(food) {
+  if (typeof food === 'string') food = JSON.parse(food);
+  selectedFood = food;
+  document.getElementById('sliderFoodName').textContent = food.n;
+  const defaultG = food.unit || 100;
+  document.getElementById('gramSlider').value = defaultG;
+  document.getElementById('sliderGrams').textContent = defaultG;
+  updateSlider();
+  document.getElementById('sliderPanel').classList.add('open');
+  document.getElementById('overlay').classList.add('open');
+}
+function closeSlider() {
+  document.getElementById('sliderPanel').classList.remove('open');
+  document.getElementById('overlay').classList.remove('open');
+}
+function updateSlider() {
+  const g = +document.getElementById('gramSlider').value;
+  document.getElementById('sliderGrams').textContent = g;
+  if (!selectedFood) return;
+  const f = selectedFood;
+  const mul = g/100;
+  document.getElementById('previewMacros').innerHTML = `
+    <div class="preview-box"><div class="v">${Math.round(f.cal*mul)}</div><div class="l">kcal</div></div>
+    <div class="preview-box"><div class="v">${(f.p*mul).toFixed(1)}g</div><div class="l">بروتين</div></div>
+    <div class="preview-box"><div class="v">${(f.c*mul).toFixed(1)}g</div><div class="l">كارب</div></div>
+    <div class="preview-box"><div class="v">${(f.f*mul).toFixed(1)}g</div><div class="l">دهون</div></div>
+  `;
+}
+async function addFoodEntry() {
+  const g = +document.getElementById('gramSlider').value;
+  const f = selectedFood;
+  const mul = g/100;
+  const entry = {
+    name: f.n, grams: g, date: todayKey(),
+    cal: f.cal*mul, prot: f.p*mul, carb: f.c*mul, fat: f.f*mul
+  };
+  const id = await dbAdd('food_log', entry);
+  entry.id = id;
+  todayFoodLog.push(entry);
+  closeSlider();
+  renderFoodLog();
+  renderFoodProgress();
+  renderHome();
+}
+async function deleteFoodEntry(id) {
+  await dbDelete('food_log', id);
+  todayFoodLog = todayFoodLog.filter(e=>e.id!==id);
+  renderFoodLog();
+  renderFoodProgress();
+  renderHome();
+}
+
+// ========================
+// WORKOUT TAB
+// ========================
+function buildWorkoutTab() {
+  const groups = Object.keys(EXERCISES);
+  const tabs = document.getElementById('muscleTabs');
+  tabs.innerHTML = groups.map((g,i)=>`
+    <div class="muscle-tab${i===0?' active':''}" onclick="selectMuscle('${g}',this)">${g}</div>
+  `).join('');
+  showMuscleGroup(groups[0]);
+}
+function selectMuscle(group, el) {
+  document.querySelectorAll('.muscle-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  showMuscleGroup(group);
+}
+function showMuscleGroup(group) {
+  document.getElementById('exList').innerHTML = EXERCISES[group].map(ex=>`
+    <div class="ex-item" onclick="openSets('${ex}')">
+      <div class="nm">${ex}</div>
+      <div class="last" id="exLast_${ex.replace(/\s/g,'_')}">جارٍ التحميل...</div>
+    </div>
+  `).join('');
+  EXERCISES[group].forEach(ex => loadLastSession(ex));
+}
+async function loadLastSession(ex) {
+  const key = 'exLast_'+ex.replace(/\s/g,'_');
+  const el = document.getElementById(key);
+  if (!el) return;
+  const all = await dbGetByIndex('workouts','exercise',ex);
+  if (!all.length) { el.textContent = 'لا يوجد سجل'; return; }
+  const last = all.sort((a,b)=>b.date.localeCompare(a.date))[0];
+  const vol = last.sets.reduce((s,r)=>s+(r.kg||0)*(r.reps||0),0);
+  el.textContent = `آخر جلسة: ${last.sets.length} سيتات · حجم ${vol} kg`;
+}
+
+async function openSets(ex) {
+  currentEx = ex;
+  document.getElementById('setPanelName').textContent = ex;
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('setsPanel').classList.add('open');
+
+  // Load last session for comparison
+  const all = await dbGetByIndex('workouts','exercise',ex);
+  const last = all.sort((a,b)=>b.date.localeCompare(a.date))[0];
+  const comp = document.getElementById('volCompare');
+  if (last) {
+    const vol = last.sets.reduce((s,r)=>s+(r.kg||0)*(r.reps||0),0);
+    comp.innerHTML = `📅 آخر جلسة (${last.date}): ${last.sets.length} سيتات، حجم إجمالي <b>${vol} kg</b>`;
+    comp.style.display='';
+    // Pre-fill with last session sets
+    currentSets = last.sets.map(s=>({...s}));
+  } else {
+    comp.style.display='none';
+    currentSets = [{kg:'', reps:''}];
+  }
+  renderSetRows();
+}
+function closeSets() {
+  document.getElementById('setsPanel').classList.remove('open');
+  document.getElementById('overlay').classList.remove('open');
+}
+function renderSetRows() {
+  document.getElementById('setRows').innerHTML = currentSets.map((s,i)=>`
+    <div class="set-row">
+      <div class="set-num">${i+1}</div>
+      <input class="set-input" type="number" inputmode="decimal" placeholder="0" value="${s.kg||''}" onchange="currentSets[${i}].kg=+this.value">
+      <input class="set-input" type="number" inputmode="numeric" placeholder="0" value="${s.reps||''}" onchange="currentSets[${i}].reps=+this.value">
+      <span class="del-set" onclick="removeSet(${i})">✕</span>
+    </div>
+  `).join('');
+}
+function addSet() {
+  const last = currentSets[currentSets.length-1] || {kg:'',reps:''};
+  currentSets.push({kg:last.kg, reps:last.reps});
+  renderSetRows();
+}
+function removeSet(i) {
+  currentSets.splice(i,1);
+  if (!currentSets.length) currentSets.push({kg:'',reps:''});
+  renderSetRows();
+}
+async function saveSets() {
+  // Sync values from inputs
+  document.querySelectorAll('#setRows .set-row').forEach((row,i)=>{
+    const inputs = row.querySelectorAll('.set-input');
+    currentSets[i] = {kg:+inputs[0].value, reps:+inputs[1].value};
+  });
+  const validSets = currentSets.filter(s=>s.kg>0||s.reps>0);
+  if (!validSets.length) { closeSets(); return; }
+  const vol = validSets.reduce((s,r)=>s+(r.kg||0)*(r.reps||0),0);
+
+  // Compare with last
+  const all = await dbGetByIndex('workouts','exercise',currentEx);
+  const prev = all.sort((a,b)=>b.date.localeCompare(a.date))[0];
+  const prevVol = prev ? prev.sets.reduce((s,r)=>s+(r.kg||0)*(r.reps||0),0) : 0;
+
+  await dbAdd('workouts', {exercise:currentEx, date:todayKey(), sets:validSets});
+  closeSets();
+
+  // Show result
+  const diff = vol - prevVol;
+  const msg = prev
+    ? `✅ حُفظ! حجم ${vol} kg (${diff>=0?'+':''}${diff} عن آخر جلسة)`
+    : `✅ حُفظ! حجم ${vol} kg`;
+  showToast(msg);
+  buildWorkoutTab();
+}
+
+function showToast(msg) {
+  let t = document.getElementById('toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id='toast';
+    Object.assign(t.style,{
+      position:'fixed',bottom:'90px',left:'50%',transform:'translateX(-50%)',
+      background:'#333',color:'white',padding:'10px 20px',borderRadius:'20px',
+      fontSize:'13px',zIndex:'999',textAlign:'center',whiteSpace:'nowrap',
+      transition:'opacity .3s'
+    });
+    document.body.appendChild(t);
+  }
+  t.textContent=msg;
+  t.style.opacity='1';
+  clearTimeout(t._timer);
+  t._timer=setTimeout(()=>t.style.opacity='0', 3000);
+}
+
+// ========================
+// SETTINGS
+// ========================
+function buildSettingsTab() {
+  if (!profile) return;
+  const goalNames = {bulk:'تضخيم 💪', cut:'تنشيف 🔥', recomp:'ريكومب ⚖️'};
+  const genderNames = {male:'ذكر', female:'أنثى'};
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-box"><div class="v">${profile.bmi}</div><div class="l">BMI</div></div>
+    <div class="stat-box"><div class="v">${profile.ideal} kg</div><div class="l">الوزن المثالي</div></div>
+    <div class="stat-box"><div class="v">${profile.tdee}</div><div class="l">TDEE (kcal)</div></div>
+    <div class="stat-box"><div class="v">${goalNames[profile.goal]||profile.goal}</div><div class="l">الهدف</div></div>
+  `;
+  document.getElementById('settingRows').innerHTML = `
+    <div class="setting-row"><div class="lbl">الجنس</div><div class="val">${genderNames[profile.gender]||profile.gender}</div></div>
+    <div class="setting-row"><div class="lbl">الوزن</div><div class="val">${profile.weight} kg</div></div>
+    <div class="setting-row"><div class="lbl">الطول</div><div class="val">${profile.height} cm</div></div>
+  `;
+  document.getElementById('goalRows').innerHTML = `
+    <div class="setting-row"><div class="lbl">🔥 السعرات</div><div class="val">${profile.cal} kcal</div></div>
+    <div class="setting-row"><div class="lbl">🥩 بروتين</div><div class="val">${profile.protG} g</div></div>
+    <div class="setting-row"><div class="lbl">🍚 كارب</div><div class="val">${profile.carbG} g</div></div>
+    <div class="setting-row"><div class="lbl">🫒 دهون</div><div class="val">${profile.fatG} g</div></div>
+  `;
+}
+
+async function resetApp() {
+  if (!confirm('هل تريد إعادة الإعداد؟ سيتم حذف كل البيانات.')) return;
+  await dbDelete('settings','profile');
+  location.reload();
+}
+
+// ========================
+// INIT
+// ========================
+async function main() {
+  await openDB();
+  buildWeightGrid();
+  buildHeightGrid();
+
+  const savedProfile = await dbGet('settings','profile');
+  if (savedProfile) {
+    document.getElementById('setup').style.display='none';
+    document.getElementById('mainApp').style.display='flex';
+    await initApp(savedProfile);
+  }
+}
+
+// Register service worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./service-worker.js').catch(()=>{});
+}
+
+main();
+</script>
+</body>
+</html>
