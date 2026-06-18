@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Gym Tracker">
+<meta name="theme-color" content="#FF6B9D">
+<link rel="manifest" href="manifest.json">
+<title>Gym Tracker</title>
+<style>
+:root{--pink:#FF6B9D;--pink-light:#FFB3D1;--pink-card:#FFE4F0;--pink-dark:#C44B8A;--text:#2D2D2D;--text-light:#777;--grad:linear-gradient(135deg,#FF6B9D,#C44B8A);--shadow:0 2px 12px rgba(255,107,157,.15);--radius:16px;--safe-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;font-family:-apple-system,'Segoe UI',sans-serif;background:#f7f7f7;color:var(--text);overflow:hidden}
+#app{display:flex;flex-direction:column;height:100%}
+.header{background:var(--grad);padding:16px 20px 14px;padding-top:calc(16px + env(safe-area-inset-top,0px));color:white;flex-shrink:0}
+.header h1{font-size:20px;font-weight:700}
+.content{flex:1;overflow-y:auto;padding:16px;padding-bottom:20px;-webkit-overflow-scrolling:touch}
+.nav{display:flex;background:white;border-top:1px solid #eee;padding-bottom:calc(8px + var(--safe-bottom));flex-shrink:0}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 4px 6px;border:none;background:none;cursor:pointer;font-size:10px;color:var(--text-light);gap:3px}
+.nav-btn .icon{font-size:22px}
+.nav-btn.active{color:var(--pink);font-weight:600}
+.card{background:white;border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:var(--shadow);border:1px solid var(--pink-card)}
+.card-title{font-size:14px;font-weight:700;color:var(--pink-dark);margin-bottom:12px}
+.btn{display:inline-flex;align-items:center;justify-content:center;background:var(--grad);color:white;border:none;border-radius:50px;font-size:15px;font-weight:600;cursor:pointer;padding:14px 28px;width:100%;transition:opacity .15s}
+.btn:active{opacity:.8}
+.btn-outline{background:none;border:2px solid var(--pink);color:var(--pink)}
+.btn-sm{padding:10px 18px;font-size:13px;width:auto}
+.btn-ghost{background:var(--pink-card);color:var(--pink-dark)}
+.step{display:none}
+.step.active{display:block}
+.step-label{font-size:16px;font-weight:700;margin-bottom:14px;text-align:center}
+.step-num{font-size:11px;color:var(--text-light);text-align:center;margin-bottom:6px}
+.choice-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.choice-grid.cols-1{grid-template-columns:1fr}
+.choice-btn{padding:14px 10px;background:var(--pink-card);border:2px solid transparent;border-radius:14px;cursor:pointer;font-size:14px;font-weight:600;color:var(--text);text-align:center;transition:all .15s;user-select:none}
+.choice-btn.selected{background:var(--pink);color:white;border-color:var(--pink-dark)}
+.choice-btn.small{padding:11px 6px;font-size:13px;border-radius:12px}
+.weight-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.height-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.prog-item{margin-bottom:10px}
+.prog-header{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px}
+.prog-bar{height:8px;background:#f0f0f0;border-radius:99px;overflow:hidden}
+.prog-fill{height:100%;border-radius:99px;transition:width .4s}
+.prog-fill.cal{background:var(--grad)}
+.prog-fill.prot{background:linear-gradient(90deg,#4ecdc4,#2ecc71)}
+.prog-fill.carb{background:linear-gradient(90deg,#f7971e,#ffd200)}
+.prog-fill.fat{background:linear-gradient(90deg,#ff6b6b,#ee5a24)}
+.cat-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:14px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.cat-tabs::-webkit-scrollbar{display:none}
+.cat-tab{flex-shrink:0;padding:8px 14px;border-radius:99px;border:2px solid var(--pink-light);background:white;font-size:12px;font-weight:600;color:var(--pink-dark);cursor:pointer}
+.cat-tab.active{background:var(--pink);color:white;border-color:var(--pink)}
+.food-list{display:flex;flex-direction:column;gap:8px}
+.food-item{padding:13px 14px;background:var(--pink-card);border-radius:12px;cursor:pointer;border:2px solid transparent}
+.food-item:active{background:var(--pink-light)}
+.food-item .name{font-size:14px;font-weight:600}
+.food-item .macros{font-size:11px;color:var(--text-light);margin-top:3px}
+.food-note{font-size:11px;color:var(--text-light);text-align:center;padding:6px 10px;background:#fff8e1;border-radius:8px;margin-bottom:10px}
+.panel{position:fixed;bottom:0;left:0;right:0;z-index:100;background:white;border-radius:24px 24px 0 0;box-shadow:0 -4px 30px rgba(0,0,0,.12);padding:20px 20px calc(20px + var(--safe-bottom));transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);max-height:88vh;overflow-y:auto}
+.panel.open{transform:translateY(0)}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:99;display:none}
+.overlay.open{display:block}
+.gram-display{font-size:36px;font-weight:800;color:var(--pink);text-align:center;margin:10px 0}
+.gram-display span{font-size:16px;font-weight:500;color:var(--text-light)}
+input[type=range]{width:100%;height:6px;border-radius:99px;outline:none;cursor:pointer;-webkit-appearance:none;background:var(--pink-card);margin:8px 0 16px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:var(--pink);box-shadow:0 2px 6px rgba(255,107,157,.4);cursor:pointer}
+.preview-macros{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+.preview-box{text-align:center;background:var(--pink-card);border-radius:10px;padding:8px 4px}
+.preview-box .v{font-size:16px;font-weight:700;color:var(--pink-dark)}
+.preview-box .l{font-size:10px;color:var(--text-light)}
+.quick-btns{display:flex;gap:6px;margin-bottom:12px;justify-content:center;flex-wrap:wrap}
+.quick-btn{padding:7px 14px;background:var(--pink-card);border:none;border-radius:99px;font-size:12px;font-weight:700;color:var(--pink-dark);cursor:pointer}
+.log-item{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--pink-card);border-radius:10px;margin-bottom:6px}
+.log-item .nm{font-size:13px;font-weight:600}
+.log-item .mc{font-size:11px;color:var(--text-light);margin-top:2px}
+.log-item .del{font-size:18px;color:#ccc;cursor:pointer;padding:4px 8px}
+.log-total{background:var(--grad);color:white;border-radius:12px;padding:12px 14px;margin-top:6px}
+.log-total .row{display:flex;justify-content:space-between;font-size:13px}
+.log-total .row+.row{margin-top:6px}
+.muscle-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:14px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.muscle-tabs::-webkit-scrollbar{display:none}
+.muscle-tab{flex-shrink:0;padding:8px 14px;border-radius:99px;border:2px solid var(--pink-light);background:white;font-size:12px;font-weight:600;color:var(--pink-dark);cursor:pointer}
+.muscle-tab.active{background:var(--pink);color:white;border-color:var(--pink)}
+.ex-item{padding:12px 14px;background:var(--pink-card);border-radius:12px;margin-bottom:8px;cursor:pointer}
+.ex-item:active{background:var(--pink-light)}
+.ex-item .nm{font-size:14px;font-weight:600}
+.ex-item .last{font-size:11px;color:var(--text-light);margin-top:2px}
+.set-row{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;align-items:center;margin-bottom:8px}
+.set-num{font-size:12px;color:var(--text-light);font-weight:600;text-align:center}
+.set-input{text-align:center;border:2px solid var(--pink-light);border-radius:10px;padding:10px 4px;font-size:15px;font-weight:700;color:var(--text);outline:none;background:white;width:100%}
+.set-input:focus{border-color:var(--pink)}
+.del-set{color:#ccc;cursor:pointer;font-size:18px;padding:4px}
+.set-headers{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;margin-bottom:6px}
+.set-headers span{text-align:center;font-size:11px;color:var(--text-light);font-weight:600}
+.vol-compare{background:var(--pink-card);border-radius:10px;padding:10px 12px;margin:10px 0;font-size:13px}
+.timer-wrap{text-align:center}
+.timer-display{font-size:52px;font-weight:800;color:var(--pink);line-height:1;margin:8px 0;font-variant-numeric:tabular-nums}
+.timer-btns{display:flex;gap:8px;justify-content:center;margin-top:8px}
+.timer-btn{padding:12px 16px;background:var(--pink-card);border:none;border-radius:12px;font-size:14px;font-weight:700;color:var(--pink-dark);cursor:pointer;flex:1}
+.big-nums{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.big-num-box{background:white;border-radius:14px;padding:14px 12px;text-align:center;border:1px solid var(--pink-card);box-shadow:var(--shadow)}
+.big-num-box .num{font-size:28px;font-weight:800;color:var(--pink)}
+.big-num-box .lbl{font-size:11px;color:var(--text-light);margin-top:2px}
+.big-num-box .unit{font-size:13px;color:var(--text-light)}
+.setting-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #f0f0f0}
+.setting-row .lbl{font-size:14px;font-weight:600}
+.setting-row .val{font-size:14px;color:var(--pink);font-weight:700}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.stat-box{background:var(--pink-card);border-radius:12px;padding:12px;text-align:center}
+.stat-box .v{font-size:20px;font-weight:800;color:var(--pink-dark)}
+.stat-box .l{font-size:11px;color:var(--text-light);margin-top:2px}
+.edit-input{border:2px solid var(--pink-light);border-radius:10px;padding:10px 12px;font-size:15px;font-weight:700;color:var(--text);outline:none;background:white;text-align:center;width:100px}
+.edit-input:focus{border-color:var(--pink)}
+.edit-input.wide{width:100%}
+.meas-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.meas-box{background:var(--pink-card);border-radius:12px;padding:12px}
+.meas-box .lbl{font-size:11px;color:var(--text-light);margin-bottom:6px}
+.chart-wrap{overflow-x:auto}
+svg.chart{display:block}
+.sec-title{font-size:13px;font-weight:700;color:var(--pink-dark);margin:14px 0 8px}
+.hidden{display:none!important}
+.flex-row{display:flex;gap:8px}
+.mt8{margin-top:8px}
+.empty{text-align:center;color:var(--text-light);padding:24px 0;font-size:14px}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- SETUP -->
+<div id="setup" style="display:flex;flex-direction:column;height:100%;">
+  <div style="background:var(--grad);padding:20px;padding-top:calc(20px + env(safe-area-inset-top,0px));color:white;flex-shrink:0;">
+    <h1 style="font-size:22px;font-weight:800;">💪 Gym Tracker</h1>
+    <p style="font-size:13px;opacity:.8;margin-top:4px;">إعداد الملف الشخصي</p>
+  </div>
+  <div id="setupInner" style="flex:1;overflow-y:auto;padding:24px 20px;-webkit-overflow-scrolling:touch;">
+    <div class="step active" id="step1">
+      <div class="step-num">١ من ٧</div>
+      <div class="step-label">ما جنسك؟</div>
+      <div class="choice-grid cols-1" style="max-width:280px;margin:auto;gap:12px;">
+        <div class="choice-btn" id="btn_gender_male">👨 ذكر</div>
+        <div class="choice-btn" id="btn_gender_female">👩 أنثى</div>
+      </div>
+    </div>
+    <div class="step" id="step2">
+      <div class="step-num">٢ من ٧</div>
+      <div class="step-label">كم عمرك؟</div>
+      <div class="choice-grid cols-1" style="max-width:280px;margin:auto;gap:10px;">
+        <div class="choice-btn" id="btn_age_20">أقل من 25</div>
+        <div class="choice-btn" id="btn_age_30">25 – 35</div>
+        <div class="choice-btn" id="btn_age_40">35 – 45</div>
+        <div class="choice-btn" id="btn_age_50">أكثر من 45</div>
+      </div>
+    </div>
+    <div class="step" id="step3">
+      <div class="step-num">٣ من ٧</div>
+      <div class="step-label">كم وزنك؟ (كيلو)</div>
+      <div style="text-align:center;">
+        <div class="gram-display" style="font-size:48px;margin:16px 0;"><span id="weightVal">70</span> <span>kg</span></div>
+        <input type="range" id="weightSlider" min="30" max="200" step="0.5" value="70" style="margin-bottom:8px;">
+        <p style="font-size:12px;color:var(--text-light);">حرّك للاختيار</p>
+      </div>
+    </div>
+    <div class="step" id="step4">
+      <div class="step-num">٤ من ٧</div>
+      <div class="step-label">كم طولك؟ (سم)</div>
+      <div style="text-align:center;">
+        <div class="gram-display" style="font-size:48px;margin:16px 0;"><span id="heightVal">170</span> <span>cm</span></div>
+        <input type="range" id="heightSlider" min="140" max="220" step="1" value="170" style="margin-bottom:8px;">
+        <p style="font-size:12px;color:var(--text-light);">حرّك للاختيار</p>
+      </div>
+    </div>
+    <div class="step" id="step5">
+      <div class="step-num">٥ من ٧</div>
+      <div class="step-label">ما هدفك؟</div>
+      <div class="choice-grid cols-1" style="max-width:280px;margin:auto;gap:12px;">
+        <div class="choice-btn" id="btn_goal_bulk">💪 تضخيم</div>
+        <div class="choice-btn" id="btn_goal_cut">🔥 تنشيف</div>
+        <div class="choice-btn" id="btn_goal_recomp">⚖️ ريكومب</div>
+      </div>
+    </div>
+    <div class="step" id="step6">
+      <div class="step-num">٦ من ٧</div>
+      <div class="step-label" id="deficitLabel">كم بدك العجز؟</div>
+      <div class="choice-grid cols-1" style="max-width:320px;margin:auto;gap:10px;" id="deficitGrid"></div>
+    </div>
+    <div class="step" id="step7">
+      <div class="step-num">٧ من ٧</div>
+      <div class="step-label">ما مستوى نشاطك اليومي؟</div>
+      <div class="choice-grid cols-1" style="max-width:320px;margin:auto;gap:10px;">
+        <div class="choice-btn" id="btn_activity_1.2">🪑 مستقر — شغل مكتبي</div>
+        <div class="choice-btn" id="btn_activity_1.375">🚶 خفيف — 1 إلى 3 أيام</div>
+        <div class="choice-btn" id="btn_activity_1.55">🏃 متوسط — 3 إلى 5 أيام</div>
+        <div class="choice-btn" id="btn_activity_1.725">🏋️ عالي — 6 إلى 7 أيام</div>
+        <div class="choice-btn" id="btn_activity_1.9">🔥 رياضي — مرتين باليوم</div>
+      </div>
+    </div>
+  </div>
+  <div style="padding:0 20px 16px;padding-bottom:calc(16px + var(--safe-bottom));flex-shrink:0;">
+    <button id="nextBtn" style="opacity:.5;" disabled class="btn">التالي ←</button>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="mainApp" style="display:none;flex-direction:column;height:100%;">
+  <div class="header">
+    <h1 id="headerTitle">الرئيسية</h1>
+  </div>
+  <div class="content" id="tabHome">
+    <div class="big-nums" id="homeNums"></div>
+    <div class="card"><div class="card-title">📊 التقدم اليوم</div><div id="homeProgress"></div></div>
+    <div class="card">
+      <div class="card-title">⏱ مؤقت الراحة</div>
+      <div class="timer-wrap">
+        <div class="timer-display" id="timerDisplay">00:00</div>
+        <div class="timer-btns">
+          <button class="timer-btn" id="tBtn60">60ث</button>
+          <button class="timer-btn" id="tBtn90">90ث</button>
+          <button class="timer-btn" id="tBtn120">120ث</button>
+          <button class="timer-btn" id="tBtnStop" style="display:none;">إيقاف</button>
+        </div>
+      </div>
+    </div>
+    <div class="card"><div class="card-title">📈 آخر 7 أيام</div><div class="chart-wrap" id="weekChart"></div></div>
+  </div>
+  <div class="content" id="tabFood" style="display:none;">
+    <div class="card"><div class="card-title">🍽 تقدم اليوم</div><div id="foodProgress"></div></div>
+    <div class="card" style="padding-bottom:10px;">
+      <div class="card-title">➕ أضف طعام</div>
+      <div style="margin-bottom:12px;"><button class="btn btn-ghost btn-sm" id="manualBtn" style="width:100%;">✏️ إدخال يدوي</button></div>
+      <div class="cat-tabs" id="catTabs"></div>
+      <div id="foodNote" class="food-note hidden"></div>
+      <div class="food-list" id="foodList"></div>
+    </div>
+    <div class="card"><div class="card-title">📋 سجل اليوم</div><div id="foodLog"></div></div>
+  </div>
+  <div class="content" id="tabWorkout" style="display:none;">
+    <div class="card"><div class="card-title">🏋️ تسجيل التمارين</div><div class="muscle-tabs" id="muscleTabs"></div><div id="exList"></div></div>
+  </div>
+  <div class="content" id="tabProgress" style="display:none;">
+    <div class="card"><div class="card-title">⚖️ الوزن والمقاسات</div><button class="btn" id="newProgBtn" style="margin-bottom:12px;">+ تسجيل جديد</button><div id="progressLog"></div></div>
+    <div class="card"><div class="card-title">📈 الوزن</div><div class="chart-wrap" id="weightChart"></div></div>
+    <div class="card"><div class="card-title">📏 المقاسات</div><div class="cat-tabs" id="measChartTabs"></div><div class="chart-wrap" id="measChart"></div></div>
+  </div>
+  <div class="content" id="tabSettings" style="display:none;">
+    <div class="card"><div class="card-title">📊 الملف الشخصي</div><div id="statsGrid" class="stats-grid"></div><div id="settingRows"></div></div>
+    <div class="card">
+      <div class="card-title">🎯 تعديل الأهداف</div>
+      <p style="font-size:12px;color:var(--text-light);margin-bottom:12px;">عدّل بدون ما تخسر بياناتك</p>
+      <div id="goalEditRows"></div>
+      <button class="btn mt8" id="saveGoalsBtn">💾 حفظ التعديلات</button>
+    </div>
+    <div class="card">
+      <div class="card-title">🔄 تحديث الوزن</div>
+      <div class="gram-display" style="font-size:28px;"><span id="newWeightVal">70</span> <span>kg</span></div>
+      <input type="range" id="newWeightSlider" min="40" max="200" step="1" value="70">
+      <button class="btn" id="updateWeightBtn">✅ تحديث وإعادة الحساب</button>
+    </div>
+    <button class="btn btn-outline mt8" id="resetBtn">🗑 إعادة الإعداد</button>
+  </div>
+  <nav class="nav">
+    <button class="nav-btn active" id="navHome"><span class="icon">🏠</span>الرئيسية</button>
+    <button class="nav-btn" id="navFood"><span class="icon">🍽</span>أكل</button>
+    <button class="nav-btn" id="navWorkout"><span class="icon">🏋️</span>تمارين</button>
+    <button class="nav-btn" id="navProgress"><span class="icon">📈</span>تقدم</button>
+    <button class="nav-btn" id="navSettings"><span class="icon">⚙️</span>إعدادات</button>
+  </nav>
+</div>
+
+<!-- OVERLAY -->
+<div class="overlay" id="overlay"></div>
+
+<!-- SLIDER PANEL -->
+<div class="panel" id="sliderPanel">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+    <h3 id="sliderFoodName">—</h3>
+    <button id="closeSliderBtn" style="background:none;border:none;font-size:22px;cursor:pointer;color:#ccc;">✕</button>
+  </div>
+  <div id="eggNote" style="display:none;font-size:11px;color:var(--text-light);background:#fff8e1;padding:6px 10px;border-radius:8px;margin-bottom:8px;text-align:center;">🥚 أدخل وزن البيضة بالقشرة — يُطرح وزن القشرة تلقائياً</div>
+  <div class="gram-display"><span id="sliderGrams">100</span> <span>g</span></div>
+  <div class="quick-btns" id="quickBtns"></div>
+  <input type="range" id="gramSlider" min="1" max="500" step="1" value="100">
+  <div class="preview-macros" id="previewMacros"></div>
+  <button class="btn" id="addFoodBtn">✅ أضف للسجل</button>
+</div>
+
+<!-- MANUAL PANEL -->
+<div class="panel" id="manualPanel">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+    <h3>✏️ إدخال يدوي</h3>
+    <button id="closeManualBtn" style="background:none;border:none;font-size:22px;cursor:pointer;color:#ccc;">✕</button>
+  </div>
+  <div style="margin-bottom:10px;"><div class="sec-title">اسم الأكل</div><input class="edit-input wide" type="text" id="manualName" placeholder="مثال: كيك عيد ميلاد"></div>
+  <div class="meas-grid">
+    <div class="meas-box"><div class="lbl">🔥 سعرات</div><input class="edit-input" type="number" id="manualCal" placeholder="0"></div>
+    <div class="meas-box"><div class="lbl">🥩 بروتين g</div><input class="edit-input" type="number" id="manualProt" placeholder="0"></div>
+    <div class="meas-box"><div class="lbl">🍚 كارب g</div><input class="edit-input" type="number" id="manualCarb" placeholder="0"></div>
+    <div class="meas-box"><div class="lbl">🫒 دهون g</div><input class="edit-input" type="number" id="manualFat" placeholder="0"></div>
+  </div>
+  <button class="btn" id="addManualBtn">✅ أضف للسجل</button>
+</div>
+
+<!-- SETS PANEL -->
+<div class="panel" id="setsPanel">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+    <h3 id="setPanelName">—</h3>
+    <button id="closeSetsBtn" style="background:none;border:none;font-size:22px;cursor:pointer;color:#ccc;">✕</button>
+  </div>
+  <div class="vol-compare" id="volCompare" style="display:none;"></div>
+  <div class="set-headers"><span>سيت</span><span>كيلو</span><span>تكرار</span><span></span></div>
+  <div id="setRows"></div>
+  <div class="flex-row mt8">
+    <button class="btn btn-ghost btn-sm" id="addSetBtn">+ أضف سيت</button>
+    <button class="btn btn-sm" id="saveSetBtn">💾 حفظ</button>
+  </div>
+</div>
+
+<!-- PROGRESS PANEL -->
+<div class="panel" id="progressPanel">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+    <h3>تسجيل الوزن والمقاسات</h3>
+    <button id="closeProgressBtn" style="background:none;border:none;font-size:22px;cursor:pointer;color:#ccc;">✕</button>
+  </div>
+  <div class="sec-title">الوزن (كيلو)</div>
+  <div class="gram-display" style="font-size:28px;"><span id="progWeightVal">70</span> <span>kg</span></div>
+  <input type="range" id="progWeightSlider" min="30" max="250" step="0.5" value="70">
+  <div class="sec-title">المقاسات (سم) — اختياري</div>
+  <div class="meas-grid">
+    <div class="meas-box"><div class="lbl">💪 الذراع</div><input class="edit-input" type="number" id="mArm" placeholder="0"></div>
+    <div class="meas-box"><div class="lbl">🫀 الصدر</div><input class="edit-input" type="number" id="mChest" placeholder="0"></div>
+    <div class="meas-box"><div class="lbl">⌛ الخصر</div><input class="edit-input" type="number" id="mWaist" placeholder="0"></div>
+    <div class="meas-box"><div class="lbl">🫃 البطن</div><input class="edit-input" type="number" id="mBelly" placeholder="0"></div>
+    <div class="meas-box"><div class="lbl">🍑 الورك</div><input class="edit-input" type="number" id="mHip" placeholder="0"></div>
+    <div class="meas-box"><div class="lbl">🦵 الفخد</div><input class="edit-input" type="number" id="mThigh" placeholder="0"></div>
+  </div>
+  <button class="btn" id="saveProgressBtn">💾 حفظ</button>
+</div>
+
+<script>
+// كل الكود داخل DOMContentLoaded لضمان تحميل الصفحة كاملاً أولاً
+document.addEventListener('DOMContentLoaded', function() {
+
+// ===================== DATA =====================
+var FOODS = {
+  'بروتينات': [
+    {n:'صدر دجاج نيء',cal:110,p:23,c:0,f:1.2},
+    {n:'بيضة كاملة',cal:143,p:13,c:0.7,f:10,isEgg:true},
+    {n:'بياض بيض',cal:52,p:11,c:0.7,f:0.2},
+    {n:'لحم بقر مفروم 15%',cal:215,p:18,c:0,f:15},
+    {n:'لحم خاروف',cal:258,p:16,c:0,f:21},
+    {n:'كبدة خاروف',cal:139,p:20,c:3,f:5},
+    {n:'كبدة دجاج',cal:119,p:17,c:1,f:4.8},
+    {n:'تونة بماء',cal:116,p:26,c:0,f:1},
+    {n:'تونة بزيت',cal:198,p:25,c:0,f:11},
+    {n:'سردين بماء',cal:130,p:22,c:0,f:4.5},
+    {n:'سردين بزيت',cal:208,p:20,c:0,f:14},
+    {n:'سلمون',cal:208,p:20,c:0,f:13},
+    {n:'قريدس',cal:99,p:21,c:0.2,f:1.1},
+  ],
+  'ألبان': [
+    {n:'حليب كامل 3.5%',cal:61,p:3.2,c:4.8,f:3.5},
+    {n:'حليب منزوع الدسم',cal:35,p:3.4,c:5,f:0.1},
+    {n:'زبادي كامل',cal:97,p:3.5,c:4.7,f:3.3},
+    {n:'زبادي منزوع الدسم',cal:56,p:4,c:7.7,f:0.4},
+    {n:'زبادي يوناني كامل',cal:115,p:9,c:3.6,f:7.5},
+    {n:'زبادي يوناني خالي',cal:59,p:10,c:3.6,f:0.4},
+    {n:'لبنة كاملة',cal:170,p:8,c:4,f:13},
+    {n:'لبنة منزوعة',cal:95,p:9,c:5,f:3},
+    {n:'جبنة قريش كاملة',cal:98,p:11,c:3.4,f:4.3},
+    {n:'جبنة قريش منزوعة',cal:72,p:12,c:3.4,f:1},
+    {n:'جبنة بيضاء كاملة',cal:264,p:14,c:2,f:22},
+    {n:'جبنة بيضاء خفيفة',cal:180,p:16,c:2,f:12},
+    {n:'جبنة صفراء كاملة',cal:402,p:25,c:1.3,f:33},
+    {n:'جبنة صفراء خفيفة',cal:284,p:28,c:1.5,f:18},
+    {n:'جبنة مشللة',cal:330,p:21,c:1,f:26},
+    {n:'حلوم كامل',cal:316,p:22,c:2,f:24},
+    {n:'موزاريلا',cal:280,p:22,c:2.2,f:17},
+    {n:'موزاريلا لايت',cal:175,p:24,c:2,f:8},
+    {n:'قشقوان',cal:370,p:24,c:1,f:30},
+    {n:'جبنة بقرية كاملة',cal:357,p:22,c:2,f:29},
+    {n:'جبنة بقرية خفيفة',cal:255,p:24,c:3,f:16},
+    {n:'جبنة غنم كاملة',cal:374,p:21,c:1,f:32},
+    {n:'جبنة غنم خفيفة',cal:268,p:23,c:2,f:18},
+    {n:'جبنة كريمة',cal:342,p:6,c:4,f:34},
+    {n:'كريمة طبخ',cal:337,p:2.8,c:3,f:35},
+    {n:'كريمة خفق',cal:300,p:2.2,c:3,f:31},
+    {n:'كشك أخضر',cal:98,p:4,c:12,f:3.5},
+    {n:'كشك بودرة',cal:350,p:14,c:55,f:8},
+  ],
+  'نشويات': [
+    {n:'أرز أبيض نيء',cal:365,p:7,c:80,f:0.7},
+    {n:'أرز بني نيء',cal:370,p:8,c:77,f:2.7},
+    {n:'برغل جاف',cal:342,p:12,c:70,f:1.3},
+    {n:'معكرونة جافة',cal:371,p:13,c:74,f:1.5},
+    {n:'شوفان جاف',cal:389,p:17,c:66,f:7},
+    {n:'خبز أبيض شريحة',cal:265,p:9,c:49,f:3,unit:30},
+    {n:'خبز أسمر شريحة',cal:247,p:13,c:41,f:4,unit:30},
+    {n:'خبز صاج',cal:218,p:7,c:45,f:1.5,unit:40},
+    {n:'خبز برغر',cal:270,p:8,c:50,f:4,unit:65},
+    {n:'خبز تورتيلا',cal:218,p:6,c:39,f:4,unit:45},
+    {n:'خبز تنور شوفان',cal:210,p:8,c:38,f:3.5,unit:33},
+    {n:'خبز تنور شعير',cal:205,p:7,c:39,f:3,unit:33},
+    {n:'خبز تنور أسمر',cal:208,p:8,c:38,f:3,unit:33},
+    {n:'بطاطا نيئة',cal:77,p:2,c:17,f:0.1},
+    {n:'بطاطا حلوة',cal:86,p:1.6,c:20,f:0.1},
+    {n:'ذرة بوشار قبل الفرقعة',cal:375,p:11,c:74,f:4.5},
+    {n:'طحين أبيض',cal:364,p:10,c:76,f:1},
+    {n:'طحين أسمر',cal:340,p:13,c:72,f:2.5},
+    {n:'عدس أحمر جاف',cal:352,p:25,c:60,f:1.1},
+    {n:'عدس أخضر جاف',cal:353,p:26,c:60,f:1.1},
+    {n:'حمص جاف',cal:378,p:20,c:63,f:6},
+    {n:'فاصوليا بيضاء جافة',cal:333,p:24,c:60,f:0.8},
+    {n:'فول مدمس جاف',cal:341,p:26,c:58,f:1.4},
+  ],
+  'دهون وإضافات': [
+    {n:'زيت زيتون',cal:884,p:0,c:0,f:100,minG:1},
+    {n:'زيت نباتي',cal:884,p:0,c:0,f:100,minG:1},
+    {n:'زبدة حيوانية',cal:717,p:0.9,c:0.1,f:81,minG:1},
+    {n:'زبدة نباتية',cal:718,p:0.2,c:0.4,f:80,minG:1},
+    {n:'سمنة حيوانية',cal:900,p:0,c:0,f:100,minG:1},
+    {n:'سمنة نباتية',cal:884,p:0,c:0,f:99,minG:1},
+    {n:'لية لحم',cal:902,p:0,c:0,f:100,minG:1},
+    {n:'زبدة فول سوداني',cal:588,p:25,c:20,f:50,minG:1},
+    {n:'نوتيلا',cal:539,p:6,c:58,f:31,minG:1},
+    {n:'أفوكادو',cal:160,p:2,c:9,f:15},
+    {n:'سمسم',cal:573,p:18,c:23,f:50,minG:1},
+    {n:'سكر',cal:387,p:0,c:100,f:0,minG:1},
+    {n:'عسل',cal:304,p:0.3,c:82,f:0,minG:1},
+  ],
+  'مكسرات وبذور': [
+    {n:'لوز',cal:579,p:21,c:22,f:50},
+    {n:'كاجو',cal:553,p:18,c:30,f:44},
+    {n:'فستق حلبي',cal:560,p:20,c:28,f:45},
+    {n:'فستق عبيد',cal:567,p:26,c:16,f:49},
+    {n:'جوز',cal:654,p:15,c:14,f:65},
+    {n:'بندق',cal:628,p:15,c:17,f:61},
+    {n:'صنوبر',cal:673,p:14,c:13,f:68},
+    {n:'كراكس',cal:480,p:8,c:62,f:22},
+    {n:'مكسرات مشكلة',cal:607,p:20,c:21,f:54},
+    {n:'بذر أبيض',cal:557,p:18,c:26,f:46},
+    {n:'بذر أسود',cal:525,p:16,c:25,f:40},
+    {n:'بذر أصفر',cal:534,p:18,c:29,f:42},
+    {n:'بذر كوسا',cal:556,p:19,c:53,f:19},
+    {n:'بذر دوار الشمس',cal:584,p:21,c:20,f:51},
+  ],
+  'فواكه': [
+    {n:'موز',cal:89,p:1.1,c:23,f:0.3},
+    {n:'تفاح',cal:52,p:0.3,c:14,f:0.2},
+    {n:'تمر حبة',cal:282,p:2.5,c:75,f:0.4,unit:8},
+    {n:'برتقال',cal:47,p:0.9,c:12,f:0.1},
+    {n:'كليمنتينا',cal:47,p:0.9,c:12,f:0.2},
+    {n:'بوملة',cal:42,p:0.8,c:11,f:0.1},
+    {n:'ليمون',cal:29,p:1.1,c:9,f:0.3},
+    {n:'عنب',cal:69,p:0.7,c:18,f:0.2},
+    {n:'فراولة',cal:32,p:0.7,c:8,f:0.3},
+    {n:'بطيخ',cal:30,p:0.6,c:8,f:0.2},
+    {n:'شمام',cal:34,p:0.8,c:8,f:0.2},
+    {n:'مانجو',cal:60,p:0.8,c:15,f:0.4},
+    {n:'أناناس',cal:50,p:0.5,c:13,f:0.1},
+    {n:'خوخ',cal:39,p:0.9,c:10,f:0.3},
+    {n:'دراق',cal:42,p:1,c:10,f:0.3},
+    {n:'مشمش',cal:48,p:1.4,c:11,f:0.4},
+    {n:'كمثرى',cal:57,p:0.4,c:15,f:0.1},
+    {n:'توت عادي',cal:43,p:1.4,c:10,f:0.5},
+    {n:'توت شامي',cal:57,p:1.7,c:14,f:0.3},
+    {n:'رمان',cal:83,p:1.7,c:19,f:1.2},
+    {n:'تين',cal:74,p:0.8,c:19,f:0.3},
+    {n:'كيوي',cal:61,p:1.1,c:15,f:0.5},
+    {n:'جوافة',cal:68,p:2.6,c:14,f:1},
+    {n:'برقوق',cal:46,p:0.7,c:11,f:0.3},
+  ],
+  'خضار': [
+    {n:'بروكلي',cal:34,p:2.8,c:7,f:0.4},
+    {n:'سبانخ',cal:23,p:2.9,c:3.6,f:0.4},
+    {n:'خيار',cal:16,p:0.7,c:3.6,f:0.1},
+    {n:'طماطم',cal:18,p:0.9,c:3.9,f:0.2},
+    {n:'جزر',cal:41,p:0.9,c:10,f:0.2},
+    {n:'كوسا',cal:17,p:1.2,c:3.1,f:0.3},
+    {n:'بصل',cal:40,p:1.1,c:9,f:0.1},
+    {n:'ثوم',cal:149,p:6.4,c:33,f:0.5},
+    {n:'فلفل رومي',cal:31,p:1,c:6,f:0.3},
+    {n:'فلفل حار',cal:40,p:1.9,c:9,f:0.4},
+    {n:'باذنجان',cal:25,p:1,c:6,f:0.2},
+    {n:'قرنبيط',cal:25,p:1.9,c:5,f:0.3},
+    {n:'ملفوف',cal:25,p:1.3,c:6,f:0.1},
+    {n:'خس',cal:15,p:1.4,c:2.9,f:0.2},
+    {n:'كرفس',cal:16,p:0.7,c:3,f:0.2},
+    {n:'فجل',cal:16,p:0.7,c:3.4,f:0.1},
+    {n:'بازيلاء',cal:81,p:5.4,c:14,f:0.4},
+    {n:'فول أخضر',cal:88,p:8,c:15,f:0.7},
+    {n:'فاصوليا خضراء',cal:31,p:1.8,c:7,f:0.2},
+    {n:'ذرة',cal:86,p:3.2,c:19,f:1.2},
+    {n:'قرع',cal:26,p:1,c:7,f:0.1},
+    {n:'لفت',cal:28,p:0.9,c:6,f:0.1},
+    {n:'بامية',cal:33,p:2,c:7,f:0.2},
+    {n:'شوندر',cal:43,p:1.6,c:10,f:0.2},
+    {n:'هليون',cal:20,p:2.2,c:3.9,f:0.1},
+    {n:'فطر',cal:22,p:3.1,c:3.3,f:0.3},
+  ],
+  'بهارات وكاكاو': [
+    {n:'كاكاو مسحوق',cal:229,p:20,c:58,f:14,minG:1},
+    {n:'قرفة',cal:247,p:4,c:81,f:1.2,minG:1},
+    {n:'زعتر',cal:276,p:10,c:63,f:7,minG:1},
+    {n:'كمون',cal:375,p:18,c:44,f:22,minG:1},
+  ],
+  'صوصات': [
+    {n:'كاتشب',cal:101,p:1.3,c:26,f:0.1,minG:1},
+    {n:'كاتشب دايت',cal:54,p:1,c:14,f:0.1,minG:1},
+    {n:'مايونيز',cal:680,p:1,c:2,f:75,minG:1},
+    {n:'مايونيز دايت',cal:350,p:1,c:6,f:36,minG:1},
+    {n:'خردل',cal:66,p:4,c:8,f:3,minG:1},
+    {n:'خردل دايت',cal:40,p:3,c:6,f:1,minG:1},
+    {n:'صوص صويا',cal:53,p:8,c:5,f:0.6,minG:1},
+    {n:'صوص صويا خفيف',cal:34,p:6,c:4,f:0.1,minG:1},
+    {n:'صوص باربيكيو',cal:172,p:1.5,c:41,f:0.5,minG:1},
+    {n:'صوص باربيكيو دايت',cal:95,p:1,c:23,f:0.2,minG:1},
+    {n:'صوص برغر',cal:411,p:1.5,c:16,f:38,minG:1},
+    {n:'صوص برغر دايت',cal:220,p:1.5,c:18,f:15,minG:1},
+    {n:'خل',cal:18,p:0,c:0.9,f:0,minG:1},
+    {n:'طحينة',cal:595,p:17,c:21,f:54,minG:1},
+    {n:'دبس بندورة',cal:258,p:5,c:58,f:0.9,minG:1},
+    {n:'دبس رمان',cal:320,p:0.5,c:80,f:0.5,minG:1},
+    {n:'مربى',cal:278,p:0.4,c:69,f:0.1,minG:1},
+  ],
+  'مشروبات': [
+    {n:'قهوة سوداء',cal:2,p:0.3,c:0,f:0,unit:240},
+    {n:'قهوة تركية',cal:5,p:0.3,c:0.5,f:0,unit:80},
+    {n:'كابتشينو بحليب',cal:74,p:4,c:8,f:2.5,unit:240},
+    {n:'لاتيه بحليب',cal:95,p:5,c:10,f:3.5,unit:300},
+    {n:'نسكافيه',cal:2,p:0.1,c:0.3,f:0,unit:200},
+    {n:'شاي أسود',cal:2,p:0,c:0.5,f:0,unit:240},
+    {n:'شاي بحليب',cal:55,p:2.5,c:6,f:2,unit:240},
+    {n:'شاي أخضر',cal:2,p:0,c:0.5,f:0,unit:240},
+    {n:'عصير برتقال طازج',cal:45,p:0.7,c:10,f:0.2,unit:200},
+    {n:'عصير تفاح',cal:46,p:0.1,c:11,f:0.1,unit:200},
+    {n:'ليموناضة',cal:40,p:0.3,c:10,f:0.1,unit:200},
+    {n:'ريد بول 250',cal:110,p:1,c:28,f:0,unit:250},
+    {n:'مونستر 473',cal:210,p:1.4,c:54,f:0,unit:473},
+    {n:'مشروب رياضي',cal:25,p:0,c:7,f:0,unit:240},
+    {n:'بيبسي',cal:42,p:0,c:11,f:0,unit:330},
+    {n:'كوكاكولا',cal:42,p:0,c:11,f:0,unit:330},
+    {n:'سفن أب',cal:41,p:0,c:11,f:0,unit:330},
+    {n:'مشروبات دايت',cal:1,p:0,c:0.1,f:0,unit:330},
+  ],
+  'حلويات': [
+    {n:'كيك شوكولا',cal:371,p:5,c:52,f:17},{n:'كيك فانيليا',cal:352,p:4.5,c:55,f:13},
+    {n:'براونيز',cal:420,p:5,c:54,f:21},{n:'كوكيز',cal:488,p:5.8,c:63,f:24},
+    {n:'دونات',cal:452,p:5,c:51,f:25},{n:'بانكيك',cal:227,p:6,c:38,f:6},
+    {n:'وافل',cal:291,p:7.5,c:38,f:11},{n:'آيس كريم',cal:207,p:3.5,c:24,f:11},
+    {n:'تشيز كيك',cal:321,p:5.5,c:26,f:22},{n:'كريم كراميل',cal:152,p:4.5,c:25,f:4},
+    {n:'تيراميسو',cal:283,p:5,c:25,f:18},{n:'بقلاوة',cal:428,p:5,c:46,f:25},
+    {n:'كنافة',cal:320,p:6,c:40,f:15},{n:'نابلسية',cal:340,p:8,c:38,f:17},
+    {n:'مدلوقة',cal:365,p:7,c:44,f:18},{n:'قطايف',cal:310,p:6,c:42,f:13},
+    {n:'مهلبية',cal:151,p:4,c:24,f:4},{n:'رز بحليب',cal:145,p:4,c:26,f:3},
+    {n:'بوظة',cal:207,p:3.5,c:24,f:11},{n:'معمول',cal:480,p:6,c:55,f:26},
+    {n:'غريبة',cal:478,p:5,c:58,f:25},{n:'حلاوة جبن',cal:332,p:9,c:40,f:15},
+    {n:'زنود الست',cal:345,p:5,c:38,f:19},{n:'عوامة',cal:390,p:5,c:55,f:17},
+    {n:'حلاوة طحينية',cal:469,p:8,c:52,f:26},
+  ],
+  'بسكويت وويفر': [
+    {n:'أوريو',cal:473,p:5,c:67,f:21},{n:'ديجستيف',cal:476,p:6.5,c:66,f:20},
+    {n:'لوتس',cal:484,p:5,c:70,f:20},{n:'كيندر بويينو',cal:553,p:8,c:55,f:34},
+    {n:'لواكر ويفر',cal:536,p:5,c:60,f:30},{n:'ويفر شوكولا',cal:520,p:5.5,c:58,f:29},
+    {n:'ويفر فانيليا',cal:505,p:5,c:62,f:26},{n:'ويفر بندق',cal:540,p:6,c:57,f:32},
+  ],
+  'شوكولا': [
+    {n:'كيت كات',cal:518,p:7,c:62,f:27},{n:'سنيكرز',cal:488,p:8,c:62,f:23},
+    {n:'مارس',cal:449,p:4.5,c:70,f:17},{n:'تويكس',cal:498,p:4.5,c:64,f:24},
+    {n:'كيندر',cal:549,p:9,c:59,f:30},{n:'فيريرو روشيه',cal:573,p:7,c:55,f:37},
+    {n:'جالاكسي',cal:536,p:7,c:60,f:30},{n:'ميلكا لوح',cal:534,p:7.5,c:59,f:29},
+    {n:'لوح داكن',cal:546,p:5,c:60,f:31},{n:'لوح حليب',cal:535,p:7.5,c:59,f:30},
+    {n:'لوح أبيض',cal:539,p:5.9,c:59,f:32},
+  ],
+  'شيبس': [
+    {n:'ليز',cal:536,p:7,c:52,f:34},{n:'برينغلز',cal:536,p:5,c:54,f:33},
+    {n:'دوريتوس',cal:500,p:7,c:62,f:24},{n:'شيتوس',cal:523,p:6.5,c:58,f:30},
+    {n:'تورتيلز',cal:480,p:6.5,c:65,f:21},
+  ],
+  'وجبات سريعة': [
+    {n:'برغر لحم',cal:295,p:17,c:24,f:14},{n:'تشيز برغر',cal:330,p:18,c:25,f:16},
+    {n:'دبل برغر',cal:420,p:25,c:28,f:23},{n:'زنجر',cal:350,p:22,c:30,f:15},
+    {n:'كريسبي دجاج',cal:320,p:20,c:28,f:13},{n:'بيتزا قطعة',cal:266,p:11,c:33,f:10},
+    {n:'هوت دوغ',cal:290,p:11,c:24,f:17},{n:'ناغتس 6 حبات',cal:280,p:15,c:16,f:17,unit:95},
+    {n:'فرايز وسط',cal:312,p:3.8,c:41,f:15,unit:117},
+  ],
+  'سندويشات': [
+    {n:'شاورما دجاج',cal:220,p:18,c:15,f:9},{n:'شاورما لحم',cal:260,p:20,c:16,f:13},
+    {n:'فلافل',cal:333,p:13,c:32,f:18},{n:'لحم بعجين',cal:280,p:14,c:30,f:12},
+    {n:'مناقيش زعتر',cal:350,p:8,c:48,f:14},{n:'مناقيش جبنة',cal:380,p:14,c:40,f:18},
+    {n:'مناقيش مشكلة',cal:400,p:14,c:42,f:20},{n:'برغر دجاج',cal:270,p:20,c:25,f:9},
+  ],
+  'معجنات': [
+    {n:'فطير',cal:320,p:7,c:42,f:14},{n:'سمبوسك لحم',cal:310,p:12,c:28,f:17},
+    {n:'سمبوسك جبنة',cal:295,p:10,c:27,f:16},{n:'بوريك',cal:330,p:11,c:30,f:18},
+    {n:'بيتزا مارغريتا',cal:250,p:10,c:33,f:8},{n:'بيتزا لحم',cal:290,p:14,c:32,f:12},
+    {n:'كروسان',cal:406,p:8.2,c:46,f:21},{n:'فطاير سبانخ',cal:270,p:7,c:32,f:13},
+    {n:'فطاير جبنة',cal:295,p:10,c:31,f:15},
+  ],
+  'أكلات سورية': [
+    {n:'كبة بالصينية',cal:250,p:12,c:20,f:13},{n:'كبة مشوية',cal:220,p:14,c:15,f:11},
+    {n:'كبة مقلية',cal:290,p:12,c:22,f:18},{n:'كبة بلبن',cal:210,p:13,c:16,f:10},
+    {n:'يالنجي',cal:180,p:3,c:25,f:8},{n:'يبرق',cal:160,p:4,c:20,f:7},
+    {n:'كفتة مشوية',cal:230,p:18,c:5,f:16},{n:'مجدرة',cal:180,p:7,c:30,f:4},
+    {n:'فتة دجاج',cal:260,p:18,c:28,f:8},{n:'فتة حمص',cal:230,p:10,c:32,f:7},
+    {n:'منسف',cal:310,p:18,c:28,f:13},{n:'مقلوبة',cal:280,p:14,c:35,f:9},
+    {n:'فريكة',cal:340,p:12,c:60,f:5},{n:'شاكرية',cal:280,p:18,c:20,f:14},
+    {n:'موزة',cal:320,p:22,c:15,f:18},{n:'دجاج محمر',cal:240,p:22,c:8,f:13},
+    {n:'سيخ كباب',cal:260,p:18,c:8,f:18},
+  ],
+  'سلطات': [
+    {n:'سلطة خضراء',cal:25,p:1.5,c:4,f:0.5},{n:'فتوش',cal:80,p:2,c:12,f:3},
+    {n:'تبولة',cal:90,p:2.5,c:12,f:4},{n:'سلطة سيزر',cal:180,p:5,c:10,f:14},
+    {n:'كول سلو',cal:150,p:1.5,c:15,f:9},{n:'حمص بطحينة',cal:166,p:8,c:14,f:9},
+    {n:'متبل',cal:60,p:2,c:6,f:3.5},{n:'بابا غنوج',cal:55,p:1.5,c:5,f:3.5},
+    {n:'لبنة',cal:120,p:6.5,c:4.5,f:9},{n:'ورق عنب بزيت',cal:170,p:3,c:23,f:8},
+  ],
+  'شوربات جاهزة': [
+    {n:'شوربة فطر ماجي',cal:45,p:1.5,c:8,f:1,unit:200},
+    {n:'شوربة شعيرية ماجي',cal:55,p:2,c:10,f:1,unit:200},
+    {n:'مكعب ماجي',cal:20,p:0.5,c:2,f:1,unit:6},
+    {n:'ظرف مرقة دجاج',cal:15,p:0.5,c:2,f:0.5,unit:8},
+  ],
+};
+
+var FOOD_NOTES = {
+  'نشويات':'الكميات قبل الطبخ — الوزن المسلوق يختلف',
+  'ألبان':'اختر الدسامة الصحيحة للحساب الدقيق',
+  'بروتينات':'اللحوم والدجاج نيئة قبل الطبخ',
+  'دهون وإضافات':'القيم لكل 100g — المقياس يبدأ من 1g',
+  'صوصات':'القيم لكل 100g — المقياس يبدأ من 1g',
+  'بهارات وكاكاو':'القيم لكل 100g — المقياس يبدأ من 1g',
+};
+
+var EXERCISES = {
+  'صدر (نادي)':['Bench Press Bar','Bench Press Dumbbell','Incline Press Bar','Incline Press Dumbbell','Decline Bench Press','Cable Crossover','Pec Deck Fly','Push Up'],
+  'ظهر (نادي)':['Deadlift','Barbell Row','Dumbbell Row','Lat Pulldown','Seated Cable Row','Pull Up','Chin Up','Hyperextension','Face Pull'],
+  'أكتاف (نادي)':['Overhead Press Bar','Overhead Press Dumbbell','Lateral Raise','Front Raise','Rear Delt Fly','Arnold Press','Cable Lateral Raise'],
+  'أرجل (نادي)':['Squat Bar','Leg Press','Leg Extension','Leg Curl','Romanian Deadlift','Calf Raise','Hack Squat','Lunges','Hip Thrust'],
+  'ذراعين (نادي)':['Barbell Curl','Dumbbell Curl','Hammer Curl','Preacher Curl','Cable Curl','Tricep Pushdown','Overhead Tricep','Skull Crusher','Tricep Dips'],
+  'كور (نادي)':['Crunch','Leg Raise','Plank','Russian Twist','Cable Crunch','AB Wheel'],
+  'غلوتس (نادي)':['Hip Thrust Bar','Hip Thrust Machine','Cable Kickbacks','Cable Abduction','Romanian Deadlift','Sumo Squat','Glute Bridge','Donkey Kicks'],
+  'بطن وخصر (بيت)':['Dead Hang','Hanging Knee Raises','Stomach Vacuum','Plank','Banded Rows'],
+  'جزء علوي (بيت)':['Lat Pulldown Band','Seated Row Band','Dumbbell Lateral Raise','Tricep Pushdown Band','Bicep Curls Dumbbell'],
+  'جزء سفلي (بيت)':['Sumo Squat Dumbbell','Dumbbell Shoulder Press','Step Ups','Dumbbell Leg Curl','Banded Glute Bridge','Standing Leg Abduction','Fire Hydrants'],
+  'غلوتس (بيت)':['Banded Glute Bridge','Donkey Kicks','Standing Leg Abduction','Fire Hydrants','Hip Thrust Floor'],
+};
+
+// ===================== DB =====================
+var db;
+function openDB(){
+  return new Promise(function(res,rej){
+    var req=indexedDB.open('GymTrackerDB',5);
+    req.onupgradeneeded=function(e){
+      var d=e.target.result;
+      if(!d.objectStoreNames.contains('settings')) d.createObjectStore('settings');
+      if(!d.objectStoreNames.contains('food_log')){var fs=d.createObjectStore('food_log',{keyPath:'id',autoIncrement:true});fs.createIndex('date','date');}
+      if(!d.objectStoreNames.contains('workouts')){var ws=d.createObjectStore('workouts',{keyPath:'id',autoIncrement:true});ws.createIndex('exercise','exercise');ws.createIndex('date','date');}
+      if(!d.objectStoreNames.contains('progress')){var ps=d.createObjectStore('progress',{keyPath:'id',autoIncrement:true});ps.createIndex('date','date');}
+    };
+    req.onsuccess=function(e){db=e.target.result;res(db);};
+    req.onerror=function(){rej(req.error);};
+  });
+}
+function dbGet(s,k){return new Promise(function(r,j){var t=db.transaction(s,'readonly');var q=t.objectStore(s).get(k);q.onsuccess=function(){r(q.result);};q.onerror=function(){j(q.error);};});}
+function dbPut(s,k,v){return new Promise(function(r,j){var t=db.transaction(s,'readwrite');var q=t.objectStore(s).put(v,k);q.onsuccess=function(){r();};q.onerror=function(){j(q.error);};});}
+function dbAdd(s,v){return new Promise(function(r,j){var t=db.transaction(s,'readwrite');var q=t.objectStore(s).add(v);q.onsuccess=function(){r(q.result);};q.onerror=function(){j(q.error);};});}
+function dbDelete(s,k){return new Promise(function(r,j){var t=db.transaction(s,'readwrite');var q=t.objectStore(s).delete(k);q.onsuccess=function(){r();};q.onerror=function(){j(q.error);};});}
+function dbGetByIndex(s,idx,v){return new Promise(function(r,j){var t=db.transaction(s,'readonly');var q=t.objectStore(s).index(idx).getAll(v);q.onsuccess=function(){r(q.result);};q.onerror=function(){j(q.error);};});}
+function dbGetAll(s){return new Promise(function(r,j){var t=db.transaction(s,'readonly');var q=t.objectStore(s).getAll();q.onsuccess=function(){r(q.result);};q.onerror=function(){j(q.error);};});}
+
+// ===================== STATE =====================
+var setupData={}, currentStep=1, profile=null, todayFoodLog=[], selectedFood=null;
+var currentEx=null, currentSets=[], timerInterval=null, timerEnd=0, currentMeasKey='waist';
+
+function todayKey(){return new Date().toISOString().slice(0,10);}
+
+// ===================== SETUP =====================
+function buildWeightGrid(){
+  var slider=document.getElementById('weightSlider');
+  var val=document.getElementById('weightVal');
+  slider.addEventListener('input',function(){
+    val.textContent=this.value;
+    setupData['weight']=+this.value;
+    enableNext();
+  });
+  // set default
+  setupData['weight']=70;
+  enableNext();
+}
+function buildHeightGrid(){
+  var slider=document.getElementById('heightSlider');
+  var val=document.getElementById('heightVal');
+  slider.addEventListener('input',function(){
+    val.textContent=this.value;
+    setupData['height']=+this.value;
+    enableNext();
+  });
+  // set default
+  setupData['height']=170;
+  enableNext();
+}
+function chooseOption(el,key,val){
+  var parent=el.closest('.choice-grid')||el.closest('.weight-grid')||el.closest('.height-grid');
+  parent.querySelectorAll('.choice-btn').forEach(function(b){b.classList.remove('selected');});
+  el.classList.add('selected');
+  setupData[key]=val;
+  if(key==='goal') buildDeficitStep();
+  enableNext();
+}
+function enableNext(){
+  var keys=['gender','age','weight','height','goal','deficit','activity'];
+  var ok=setupData[keys[currentStep-1]]!==undefined;
+  document.getElementById('nextBtn').disabled=!ok;
+  document.getElementById('nextBtn').style.opacity=ok?'1':'.5';
+}
+function buildDeficitStep(){
+  var g=setupData.goal;
+  if(g==='recomp'){setupData.deficit=0;return;}
+  var lbl=document.getElementById('deficitLabel');
+  var grid=document.getElementById('deficitGrid');
+  var opts;
+  if(g==='cut'){
+    lbl.textContent='كم بدك العجز؟';
+    opts=[{l:'عجز خفيف — ناقص 200',v:-200},{l:'عجز معتدل — ناقص 400',v:-400},{l:'عجز قوي — ناقص 600',v:-600},{l:'عجز شديد — ناقص 800',v:-800}];
+  } else {
+    lbl.textContent='كم بدك الزيادة؟';
+    opts=[{l:'زيادة خفيفة — زائد 200',v:200},{l:'زيادة معتدلة — زائد 300',v:300},{l:'زيادة قوية — زائد 500',v:500}];
+  }
+  grid.innerHTML='';
+  opts.forEach(function(o){
+    var b=document.createElement('div');
+    b.className='choice-btn';
+    b.textContent=o.l;
+    b.addEventListener('click',function(){chooseOption(b,'deficit',o.v);});
+    grid.appendChild(b);
+  });
+}
+document.getElementById('nextBtn').addEventListener('click',function(){
+  var keys=['gender','age','weight','height','goal','deficit','activity'];
+  if(setupData[keys[currentStep-1]]===undefined) return;
+  if(currentStep<7){
+    document.getElementById('step'+currentStep).classList.remove('active');
+    currentStep++;
+    if(currentStep===6&&setupData.goal==='recomp') currentStep++;
+    document.getElementById('step'+currentStep).classList.add('active');
+    document.getElementById('nextBtn').textContent=currentStep===7?'ابدأ 🚀':'التالي ←';
+    enableNext();
+  } else {
+    finishSetup();
+  }
+});
+
+// Setup step buttons
+[['btn_gender_male','gender','male'],['btn_gender_female','gender','female'],
+ ['btn_age_20','age',20],['btn_age_30','age',30],['btn_age_40','age',40],['btn_age_50','age',50],
+ ['btn_goal_bulk','goal','bulk'],['btn_goal_cut','goal','cut'],['btn_goal_recomp','goal','recomp'],
+ ['btn_activity_1.2','activity',1.2],['btn_activity_1.375','activity',1.375],
+ ['btn_activity_1.55','activity',1.55],['btn_activity_1.725','activity',1.725],
+ ['btn_activity_1.9','activity',1.9]
+].forEach(function(item){
+  var el=document.getElementById(item[0]);
+  if(el) el.addEventListener('click',function(){chooseOption(el,item[1],item[2]);});
+});
+
+function calcMacros(d){
+  var bmr;
+  if(d.gender==='male') bmr=10*d.weight+6.25*d.height-5*d.age+5;
+  else bmr=10*d.weight+6.25*d.height-5*d.age-161;
+  var tdee=Math.round(bmr*(d.activity||1.55));
+  var cal=tdee+(d.deficit||0);
+  var protG,fatPct;
+  if(d.goal==='bulk'){protG=Math.round(2.2*d.weight);fatPct=0.25;}
+  else if(d.goal==='cut'){protG=Math.round(2.5*d.weight);fatPct=0.25;}
+  else{protG=Math.round(2.2*d.weight);fatPct=0.30;}
+  var fatCal=Math.round(cal*fatPct);
+  var fatG=Math.round(fatCal/9);
+  var carbG=Math.round((cal-protG*4-fatCal)/4);
+  var bmi=(d.weight/Math.pow(d.height/100,2)).toFixed(1);
+  var ideal=d.gender==='male'?Math.round(50+2.3*((d.height-152.4)/2.54)):Math.round(45.5+2.3*((d.height-152.4)/2.54));
+  return{tdee:tdee,cal:cal,protG:protG,carbG:carbG,fatG:fatG,bmi:bmi,ideal:ideal};
+}
+async function finishSetup(){
+  var m=calcMacros(setupData);
+  var prof=Object.assign({},setupData,m);
+  await dbPut('settings','profile',prof);
+  document.getElementById('setup').style.display='none';
+  var app=document.getElementById('mainApp');
+  app.style.display='flex';app.style.flexDirection='column';app.style.height='100%';
+  await initApp(prof);
+}
+
+// ===================== APP =====================
+async function initApp(p){
+  profile=p;
+  document.getElementById('newWeightSlider').value=p.weight;
+  document.getElementById('newWeightVal').textContent=p.weight;
+  todayFoodLog=await dbGetByIndex('food_log','date',todayKey());
+  renderHome();buildFoodTab();buildWorkoutTab();buildSettingsTab();
+}
+
+// NAV
+['Home','Food','Workout','Progress','Settings'].forEach(function(name){
+  document.getElementById('nav'+name).addEventListener('click',function(){switchTab(name);});
+});
+function switchTab(name){
+  ['Home','Food','Workout','Progress','Settings'].forEach(function(t){
+    document.getElementById('tab'+t).style.display=t===name?'block':'none';
+    document.getElementById('nav'+t).classList.toggle('active',t===name);
+  });
+  var titles={Home:'الرئيسية 🏠',Food:'تتبع الأكل 🍽',Workout:'التمارين 🏋️',Progress:'التقدم 📈',Settings:'الإعدادات ⚙️'};
+  document.getElementById('headerTitle').textContent=titles[name];
+  if(name==='Home') renderHome();
+  if(name==='Food') renderFoodProgress();
+  if(name==='Progress') renderProgressTab();
+  if(name==='Settings') buildSettingsTab();
+}
+
+// HOME
+function calcTotals(){return todayFoodLog.reduce(function(a,e){return{cal:a.cal+(e.cal||0),prot:a.prot+(e.prot||0),carb:a.carb+(e.carb||0),fat:a.fat+(e.fat||0)};},{cal:0,prot:0,carb:0,fat:0});}
+function renderHome(){
+  if(!profile) return;
+  var t=calcTotals();
+  document.getElementById('homeNums').innerHTML=
+    '<div class="big-num-box"><div class="num">'+Math.max(0,profile.cal-Math.round(t.cal))+'</div><div class="lbl">سعرات متبقية</div><div class="unit">kcal</div></div>'+
+    '<div class="big-num-box"><div class="num">'+Math.max(0,profile.protG-Math.round(t.prot))+'g</div><div class="lbl">بروتين متبقي</div></div>'+
+    '<div class="big-num-box"><div class="num">'+Math.max(0,profile.carbG-Math.round(t.carb))+'g</div><div class="lbl">كارب متبقي</div></div>'+
+    '<div class="big-num-box"><div class="num">'+Math.max(0,profile.fatG-Math.round(t.fat))+'g</div><div class="lbl">دهون متبقية</div></div>';
+  renderBars('homeProgress',t);
+  renderWeekChart();
+}
+function renderBars(id,t){
+  if(!profile) return;
+  var bars=[
+    {l:'سعرات',c:Math.round(t.cal),tg:profile.cal,cl:'cal',u:'kcal'},
+    {l:'بروتين',c:Math.round(t.prot),tg:profile.protG,cl:'prot',u:'g'},
+    {l:'كارب',c:Math.round(t.carb),tg:profile.carbG,cl:'carb',u:'g'},
+    {l:'دهون',c:Math.round(t.fat),tg:profile.fatG,cl:'fat',u:'g'},
+  ];
+  document.getElementById(id).innerHTML=bars.map(function(b){
+    return '<div class="prog-item"><div class="prog-header"><span>'+b.l+'</span><span>'+b.c+' / '+b.tg+' '+b.u+'</span></div>'+
+    '<div class="prog-bar"><div class="prog-fill '+b.cl+'" style="width:'+Math.min(100,b.tg>0?b.c/b.tg*100:0).toFixed(1)+'%"></div></div></div>';
+  }).join('');
+}
+async function renderWeekChart(){
+  var today=new Date(), days=[];
+  for(var i=6;i>=0;i--){var d=new Date(today);d.setDate(d.getDate()-i);days.push(d.toISOString().slice(0,10));}
+  var allLogs=await dbGetAll('food_log');
+  var data=days.map(function(d){return allLogs.filter(function(e){return e.date===d;}).reduce(function(s,e){return s+(e.cal||0);},0);});
+  var maxVal=Math.max.apply(null,data.concat([profile?profile.cal:2000,1]));
+  var labels=days.map(function(d){return['أح','إث','ث','أر','خ','ج','س'][new Date(d).getDay()];});
+  var PAD=10,BW=32,GAP=6,H=120,html='';
+  data.forEach(function(v,i){
+    var bH=Math.max(4,(v/maxVal)*(H-30)),x=PAD+i*(BW+GAP),y=H-PAD-bH-14,isToday=days[i]===todayKey();
+    html+='<rect x="'+x+'" y="'+(y+14)+'" width="'+BW+'" height="'+bH+'" rx="6" fill="'+(isToday?'url(#grad)':'#FFB3D1')+'"/>'+
+    '<text x="'+(x+BW/2)+'" y="'+y+'" text-anchor="middle" font-size="9" fill="#777">'+(v>0?Math.round(v):'')+'</text>'+
+    '<text x="'+(x+BW/2)+'" y="'+H+'" text-anchor="middle" font-size="10" fill="'+(isToday?'#FF6B9D':'#aaa')+'" font-weight="'+(isToday?700:400)+'">'+labels[i]+'</text>';
+  });
+  document.getElementById('weekChart').innerHTML='<svg class="chart" viewBox="0 0 '+(PAD*2+days.length*(BW+GAP))+' '+(H+2)+'" style="width:100%;max-width:400px;">'+
+  '<defs><linearGradient id="grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FF6B9D"/><stop offset="100%" stop-color="#C44B8A"/></linearGradient></defs>'+html+'</svg>';
+}
+
+// TIMER
+document.getElementById('tBtn60').addEventListener('click',function(){startTimer(60);});
+document.getElementById('tBtn90').addEventListener('click',function(){startTimer(90);});
+document.getElementById('tBtn120').addEventListener('click',function(){startTimer(120);});
+document.getElementById('tBtnStop').addEventListener('click',function(){stopTimer();});
+function startTimer(secs){
+  stopTimer();timerEnd=Date.now()+secs*1000;
+  document.getElementById('tBtnStop').style.display='';
+  timerInterval=setInterval(function(){
+    var left=Math.max(0,Math.ceil((timerEnd-Date.now())/1000));
+    document.getElementById('timerDisplay').textContent=String(Math.floor(left/60)).padStart(2,'0')+':'+String(left%60).padStart(2,'0');
+    if(left===0) stopTimer();
+  },200);
+}
+function stopTimer(){clearInterval(timerInterval);document.getElementById('timerDisplay').textContent='00:00';document.getElementById('tBtnStop').style.display='none';}
+
+// FOOD
+function buildFoodTab(){
+  var cats=Object.keys(FOODS);
+  var tabs=document.getElementById('catTabs');
+  tabs.innerHTML='';
+  cats.forEach(function(c,i){
+    var t=document.createElement('div');
+    t.className='cat-tab'+(i===0?' active':'');
+    t.textContent=c;
+    t.addEventListener('click',function(){
+      document.querySelectorAll('.cat-tab').forEach(function(x){x.classList.remove('active');});
+      t.classList.add('active');
+      showFoodCat(c);
+    });
+    tabs.appendChild(t);
+  });
+  showFoodCat(cats[0]);renderFoodLog();renderFoodProgress();
+}
+function showFoodCat(cat){
+  var note=FOOD_NOTES[cat];
+  var noteEl=document.getElementById('foodNote');
+  if(note){noteEl.textContent=note;noteEl.classList.remove('hidden');}else noteEl.classList.add('hidden');
+  var list=document.getElementById('foodList');
+  list.innerHTML='';
+  FOODS[cat].forEach(function(f){
+    var d=document.createElement('div');
+    d.className='food-item';
+    d.innerHTML='<div class="name">'+f.n+'</div><div class="macros">سعرات '+f.cal+' · بروتين '+f.p+'g · كارب '+f.c+'g · دهون '+f.f+'g <span style="color:#bbb">/ 100g</span></div>';
+    d.addEventListener('click',function(){openSlider(f);});
+    list.appendChild(d);
+  });
+}
+function renderFoodProgress(){if(profile) renderBars('foodProgress',calcTotals());}
+function renderFoodLog(){
+  var log=document.getElementById('foodLog');
+  if(!todayFoodLog.length){log.innerHTML='<div class="empty">لم تضف أي وجبة بعد 🍽</div>';return;}
+  var tot=todayFoodLog.reduce(function(a,e){return{cal:a.cal+e.cal,prot:a.prot+e.prot,carb:a.carb+e.carb,fat:a.fat+e.fat};},{cal:0,prot:0,carb:0,fat:0});
+  var html=todayFoodLog.map(function(e){
+    return '<div class="log-item"><div><div class="nm">'+e.name+' <span style="color:var(--pink-dark);font-size:11px;">'+(e.grams?e.grams+'g':'')+'</span></div>'+
+    '<div class="mc">'+Math.round(e.cal)+' kcal · P '+e.prot.toFixed(1)+'g · C '+e.carb.toFixed(1)+'g · F '+e.fat.toFixed(1)+'g</div></div>'+
+    '<div class="del" data-delid="'+e.id+'">🗑</div></div>';
+  }).join('');
+  html+='<div class="log-total"><div class="row"><span>المجموع</span><span>'+Math.round(tot.cal)+' kcal</span></div>'+
+  '<div class="row"><span>بروتين</span><span>'+tot.prot.toFixed(1)+'g</span></div>'+
+  '<div class="row"><span>كارب</span><span>'+tot.carb.toFixed(1)+'g</span></div>'+
+  '<div class="row"><span>دهون</span><span>'+tot.fat.toFixed(1)+'g</span></div></div>';
+  log.innerHTML=html;
+  log.querySelectorAll('.del[data-delid]').forEach(function(btn){
+    btn.addEventListener('click',function(){deleteFoodEntry(+btn.getAttribute('data-delid'));});
+  });
+}
+
+// SLIDER
+document.getElementById('manualBtn').addEventListener('click',function(){openPanel('manualPanel');});
+document.getElementById('closeSliderBtn').addEventListener('click',function(){closePanel('sliderPanel');});
+document.getElementById('closeManualBtn').addEventListener('click',function(){closePanel('manualPanel');});
+document.getElementById('overlay').addEventListener('click',function(){closeAllPanels();});
+document.getElementById('gramSlider').addEventListener('input',function(){updateSlider();});
+document.getElementById('addFoodBtn').addEventListener('click',function(){addFoodEntry();});
+document.getElementById('addManualBtn').addEventListener('click',function(){addManualEntry();});
+
+function openPanel(id){
+  closeAllPanels();
+  document.getElementById(id).classList.add('open');
+  document.getElementById('overlay').classList.add('open');
+}
+function closePanel(id){
+  document.getElementById(id).classList.remove('open');
+  document.getElementById('overlay').classList.remove('open');
+}
+function closeAllPanels(){
+  document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('open');});
+  document.getElementById('overlay').classList.remove('open');
+}
+
+function openSlider(food){
+  selectedFood=food;
+  document.getElementById('sliderFoodName').textContent=food.n;
+  var minG=food.minG||1;
+  var defG=food.unit||(food.isEgg?65:100);
+  var slider=document.getElementById('gramSlider');
+  slider.min=minG;slider.max=500;slider.step=minG<=1?1:5;slider.value=defG;
+  document.getElementById('sliderGrams').textContent=defG;
+  document.getElementById('eggNote').style.display=food.isEgg?'block':'none';
+  var qb=document.getElementById('quickBtns');
+  qb.innerHTML='';
+  var btns=[];
+  if(food.isEgg){
+    btns=[{l:'صغيرة 50g',v:50},{l:'وسط 65g',v:65},{l:'كبيرة 80g',v:80},{l:'كبيرة جداً 100g',v:100}];
+  } else if(food.unit){
+    btns=[{l:'1 حبة ('+food.unit+'g)',v:food.unit},{l:'2 حبة ('+(food.unit*2)+'g)',v:food.unit*2}];
+  }
+  btns.forEach(function(b){
+    var btn=document.createElement('button');
+    btn.className='quick-btn';btn.textContent=b.l;
+    btn.addEventListener('click',function(){
+      slider.value=b.v;
+      document.getElementById('sliderGrams').textContent=b.v;
+      updateSlider();
+    });
+    qb.appendChild(btn);
+  });
+  updateSlider();
+  openPanel('sliderPanel');
+}
+function updateSlider(){
+  var g=+document.getElementById('gramSlider').value;
+  document.getElementById('sliderGrams').textContent=g;
+  if(!selectedFood) return;
+  var f=selectedFood;
+  var actualG=f.isEgg?Math.max(1,g-10):g;
+  var mul=actualG/100;
+  document.getElementById('previewMacros').innerHTML=
+    '<div class="preview-box"><div class="v">'+Math.round(f.cal*mul)+'</div><div class="l">kcal</div></div>'+
+    '<div class="preview-box"><div class="v">'+(f.p*mul).toFixed(1)+'g</div><div class="l">بروتين</div></div>'+
+    '<div class="preview-box"><div class="v">'+(f.c*mul).toFixed(1)+'g</div><div class="l">كارب</div></div>'+
+    '<div class="preview-box"><div class="v">'+(f.f*mul).toFixed(1)+'g</div><div class="l">دهون</div></div>';
+}
+async function addFoodEntry(){
+  var g=+document.getElementById('gramSlider').value;
+  var f=selectedFood;
+  var actualG=f.isEgg?Math.max(1,g-10):g;
+  var mul=actualG/100;
+  var entry={name:f.n,grams:g,date:todayKey(),cal:f.cal*mul,prot:f.p*mul,carb:f.c*mul,fat:f.f*mul};
+  var id=await dbAdd('food_log',entry);entry.id=id;
+  todayFoodLog.push(entry);
+  closeAllPanels();renderFoodLog();renderFoodProgress();renderHome();
+}
+async function deleteFoodEntry(id){
+  await dbDelete('food_log',id);
+  todayFoodLog=todayFoodLog.filter(function(e){return e.id!==id;});
+  renderFoodLog();renderFoodProgress();renderHome();
+}
+async function addManualEntry(){
+  var name=document.getElementById('manualName').value||'وجبة يدوية';
+  var cal=+document.getElementById('manualCal').value||0;
+  var prot=+document.getElementById('manualProt').value||0;
+  var carb=+document.getElementById('manualCarb').value||0;
+  var fat=+document.getElementById('manualFat').value||0;
+  var entry={name:name,grams:0,date:todayKey(),cal:cal,prot:prot,carb:carb,fat:fat};
+  var id=await dbAdd('food_log',entry);entry.id=id;
+  todayFoodLog.push(entry);
+  closeAllPanels();renderFoodLog();renderFoodProgress();renderHome();
+  showToast('✅ تمت الإضافة');
+}
+
+// WORKOUT
+function buildWorkoutTab(){
+  var groups=Object.keys(EXERCISES);
+  var tabs=document.getElementById('muscleTabs');
+  tabs.innerHTML='';
+  groups.forEach(function(g,i){
+    var t=document.createElement('div');
+    t.className='muscle-tab'+(i===0?' active':'');
+    t.textContent=g;
+    t.addEventListener('click',function(){
+      document.querySelectorAll('.muscle-tab').forEach(function(x){x.classList.remove('active');});
+      t.classList.add('active');
+      showMuscleGroup(g);
+    });
+    tabs.appendChild(t);
+  });
+  showMuscleGroup(groups[0]);
+}
+function showMuscleGroup(group){
+  var list=document.getElementById('exList');
+  list.innerHTML='';
+  EXERCISES[group].forEach(function(ex){
+    var d=document.createElement('div');
+    d.className='ex-item';
+    d.innerHTML='<div class="nm">'+ex+'</div><div class="last" id="el_'+ex.replace(/[^a-zA-Z0-9]/g,'_')+'">جارٍ التحميل...</div>';
+    d.addEventListener('click',function(){openSets(ex);});
+    list.appendChild(d);
+    loadLastSession(ex);
+  });
+}
+async function loadLastSession(ex){
+  var key='el_'+ex.replace(/[^a-zA-Z0-9]/g,'_');
+  var el=document.getElementById(key);if(!el) return;
+  var all=await dbGetByIndex('workouts','exercise',ex);
+  if(!all.length){el.textContent='لا يوجد سجل';return;}
+  var last=all.sort(function(a,b){return b.date.localeCompare(a.date);})[0];
+  var vol=last.sets.reduce(function(s,r){return s+(r.kg||0)*(r.reps||0);},0);
+  el.textContent='آخر جلسة: '+last.sets.length+' سيتات · حجم '+vol+' kg';
+}
+document.getElementById('closeSetsBtn').addEventListener('click',function(){closeAllPanels();});
+document.getElementById('addSetBtn').addEventListener('click',function(){
+  var last=currentSets[currentSets.length-1]||{kg:'',reps:''};
+  currentSets.push({kg:last.kg,reps:last.reps});
+  renderSetRows();
+});
+document.getElementById('saveSetBtn').addEventListener('click',function(){saveSets();});
+
+async function openSets(ex){
+  currentEx=ex;
+  document.getElementById('setPanelName').textContent=ex;
+  var all=await dbGetByIndex('workouts','exercise',ex);
+  var last=all.sort(function(a,b){return b.date.localeCompare(a.date);})[0];
+  var comp=document.getElementById('volCompare');
+  if(last){
+    var vol=last.sets.reduce(function(s,r){return s+(r.kg||0)*(r.reps||0);},0);
+    comp.innerHTML='📅 آخر جلسة ('+last.date+'): '+last.sets.length+' سيتات، حجم <b>'+vol+' kg</b>';
+    comp.style.display='';
+    currentSets=last.sets.map(function(s){return{kg:s.kg,reps:s.reps};});
+  } else {
+    comp.style.display='none';
+    currentSets=[{kg:'',reps:''}];
+  }
+  renderSetRows();
+  openPanel('setsPanel');
+}
+function renderSetRows(){
+  document.getElementById('setRows').innerHTML=currentSets.map(function(s,i){
+    return '<div class="set-row">'+
+    '<div class="set-num">'+(i+1)+'</div>'+
+    '<input class="set-input" type="number" inputmode="decimal" placeholder="0" value="'+(s.kg||'')+'" data-idx="'+i+'" data-type="kg">'+
+    '<input class="set-input" type="number" inputmode="numeric" placeholder="0" value="'+(s.reps||'')+'" data-idx="'+i+'" data-type="reps">'+
+    '<span class="del-set" data-idx="'+i+'">✕</span></div>';
+  }).join('');
+  document.querySelectorAll('#setRows .del-set').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var i=+btn.getAttribute('data-idx');
+      currentSets.splice(i,1);
+      if(!currentSets.length) currentSets.push({kg:'',reps:''});
+      renderSetRows();
+    });
+  });
+  document.querySelectorAll('#setRows .set-input').forEach(function(inp){
+    inp.addEventListener('change',function(){
+      var i=+inp.getAttribute('data-idx');
+      var type=inp.getAttribute('data-type');
+      currentSets[i][type]=+inp.value;
+    });
+  });
+}
+async function saveSets(){
+  document.querySelectorAll('#setRows .set-row').forEach(function(row,i){
+    var inputs=row.querySelectorAll('.set-input');
+    if(currentSets[i]) currentSets[i]={kg:+inputs[0].value,reps:+inputs[1].value};
+  });
+  var valid=currentSets.filter(function(s){return s.kg>0||s.reps>0;});
+  if(!valid.length){closeAllPanels();return;}
+  var vol=valid.reduce(function(s,r){return s+(r.kg||0)*(r.reps||0);},0);
+  var all=await dbGetByIndex('workouts','exercise',currentEx);
+  var prev=all.sort(function(a,b){return b.date.localeCompare(a.date);})[0];
+  var prevVol=prev?prev.sets.reduce(function(s,r){return s+(r.kg||0)*(r.reps||0);},0):0;
+  await dbAdd('workouts',{exercise:currentEx,date:todayKey(),sets:valid});
+  closeAllPanels();
+  var diff=vol-prevVol;
+  showToast(prev?'✅ حُفظ! حجم '+vol+' kg ('+(diff>=0?'+':'')+diff+' عن آخر جلسة)':'✅ حُفظ! حجم '+vol+' kg');
+  buildWorkoutTab();
+}
+
+// PROGRESS
+document.getElementById('newProgBtn').addEventListener('click',function(){
+  if(profile){document.getElementById('progWeightSlider').value=profile.weight;document.getElementById('progWeightVal').textContent=profile.weight;}
+  ['mArm','mChest','mWaist','mBelly','mHip','mThigh'].forEach(function(id){document.getElementById(id).value='';});
+  openPanel('progressPanel');
+});
+document.getElementById('closeProgressBtn').addEventListener('click',function(){closeAllPanels();});
+document.getElementById('progWeightSlider').addEventListener('input',function(){document.getElementById('progWeightVal').textContent=this.value;});
+document.getElementById('saveProgressBtn').addEventListener('click',function(){saveProgressEntry();});
+
+async function renderProgressTab(){
+  var all=await dbGetAll('progress');
+  all.sort(function(a,b){return b.date.localeCompare(a.date);});
+  var log=document.getElementById('progressLog');
+  if(!all.length){log.innerHTML='<div class="empty">لم تسجل أي قياس بعد ⚖️</div>';}
+  else{
+    var html=all.map(function(e){
+      return '<div class="log-item"><div><div class="nm">'+e.date+' — '+e.weight+' kg</div>'+
+      '<div class="mc">ذراع '+(e.arm||'—')+' · صدر '+(e.chest||'—')+' · خصر '+(e.waist||'—')+' · بطن '+(e.belly||'—')+' · ورك '+(e.hip||'—')+' · فخد '+(e.thigh||'—')+' سم</div></div>'+
+      '<div class="del" data-progid="'+e.id+'">🗑</div></div>';
+    }).join('');
+    log.innerHTML=html;
+    log.querySelectorAll('.del[data-progid]').forEach(function(btn){
+      btn.addEventListener('click',function(){deleteProgressEntry(+btn.getAttribute('data-progid'));});
+    });
+  }
+  renderWeightChart(all);buildMeasTabs(all);
+}
+function renderWeightChart(all){
+  var sorted=all.slice().sort(function(a,b){return a.date.localeCompare(b.date);});
+  if(sorted.length<2){document.getElementById('weightChart').innerHTML='<div class="empty">سجّل قياسين على الأقل</div>';return;}
+  var vals=sorted.map(function(e){return e.weight;}),maxV=Math.max.apply(null,vals),minV=Math.min.apply(null,vals);
+  var W=300,H=100,PAD=10;
+  var pts=sorted.map(function(e,i){return (PAD+i*(W-PAD*2)/(sorted.length-1))+','+(PAD+(maxV-e.weight)/(maxV-minV+1)*(H-PAD*2));}).join(' ');
+  document.getElementById('weightChart').innerHTML='<svg class="chart" viewBox="0 0 '+W+' '+(H+20)+'" style="width:100%;"><polyline points="'+pts+'" fill="none" stroke="#FF6B9D" stroke-width="2.5" stroke-linejoin="round"/>'+
+  sorted.map(function(e,i){var x=PAD+i*(W-PAD*2)/(sorted.length-1),y=PAD+(maxV-e.weight)/(maxV-minV+1)*(H-PAD*2);
+    return '<circle cx="'+x+'" cy="'+y+'" r="4" fill="#FF6B9D"/><text x="'+x+'" y="'+(H+16)+'" text-anchor="middle" font-size="8" fill="#aaa">'+e.date.slice(5)+'</text>';}).join('')+'</svg>';
+}
+var MEAS_KEYS={arm:'الذراع',chest:'الصدر',waist:'الخصر',belly:'البطن',hip:'الورك',thigh:'الفخد'};
+function buildMeasTabs(all){
+  var tabs=document.getElementById('measChartTabs');
+  tabs.innerHTML='';
+  Object.entries(MEAS_KEYS).forEach(function(entry){
+    var k=entry[0],l=entry[1];
+    var t=document.createElement('div');
+    t.className='cat-tab'+(k===currentMeasKey?' active':'');
+    t.textContent=l;
+    t.addEventListener('click',function(){
+      currentMeasKey=k;
+      document.querySelectorAll('#measChartTabs .cat-tab').forEach(function(x){x.classList.remove('active');});
+      t.classList.add('active');
+      renderMeasChart(all,k);
+    });
+    tabs.appendChild(t);
+  });
+  renderMeasChart(all,currentMeasKey);
+}
+function renderMeasChart(all,key){
+  var sorted=all.filter(function(e){return e[key];}).sort(function(a,b){return a.date.localeCompare(b.date);});
+  if(sorted.length<2){document.getElementById('measChart').innerHTML='<div class="empty">بيانات غير كافية</div>';return;}
+  var vals=sorted.map(function(e){return +e[key];}),maxV=Math.max.apply(null,vals),minV=Math.min.apply(null,vals);
+  var W=300,H=100,PAD=10;
+  var pts=sorted.map(function(e,i){return (PAD+i*(W-PAD*2)/(sorted.length-1))+','+(PAD+(maxV-e[key])/(maxV-minV+1)*(H-PAD*2));}).join(' ');
+  document.getElementById('measChart').innerHTML='<svg class="chart" viewBox="0 0 '+W+' '+(H+20)+'" style="width:100%;"><polyline points="'+pts+'" fill="none" stroke="#C44B8A" stroke-width="2.5" stroke-linejoin="round"/>'+
+  sorted.map(function(e,i){var x=PAD+i*(W-PAD*2)/(sorted.length-1),y=PAD+(maxV-e[key])/(maxV-minV+1)*(H-PAD*2);
+    return '<circle cx="'+x+'" cy="'+y+'" r="4" fill="#C44B8A"/><text x="'+x+'" y="'+(H+16)+'" text-anchor="middle" font-size="8" fill="#aaa">'+e.date.slice(5)+'</text>';}).join('')+'</svg>';
+}
+async function saveProgressEntry(){
+  var entry={date:todayKey(),weight:+document.getElementById('progWeightSlider').value,
+    arm:+document.getElementById('mArm').value||null,chest:+document.getElementById('mChest').value||null,
+    waist:+document.getElementById('mWaist').value||null,belly:+document.getElementById('mBelly').value||null,
+    hip:+document.getElementById('mHip').value||null,thigh:+document.getElementById('mThigh').value||null};
+  await dbAdd('progress',entry);
+  closeAllPanels();showToast('✅ تم حفظ القياس');renderProgressTab();
+}
+async function deleteProgressEntry(id){await dbDelete('progress',id);renderProgressTab();}
+
+// SETTINGS
+function buildSettingsTab(){
+  if(!profile) return;
+  var gNames={bulk:'تضخيم 💪',cut:'تنشيف 🔥',recomp:'ريكومب ⚖️'};
+  document.getElementById('statsGrid').innerHTML=
+    '<div class="stat-box"><div class="v">'+profile.bmi+'</div><div class="l">BMI</div></div>'+
+    '<div class="stat-box"><div class="v">'+profile.ideal+' kg</div><div class="l">الوزن المثالي</div></div>'+
+    '<div class="stat-box"><div class="v">'+profile.tdee+'</div><div class="l">TDEE</div></div>'+
+    '<div class="stat-box"><div class="v">'+(gNames[profile.goal]||profile.goal)+'</div><div class="l">الهدف</div></div>';
+  document.getElementById('settingRows').innerHTML=
+    '<div class="setting-row"><div class="lbl">الجنس</div><div class="val">'+(profile.gender==='male'?'ذكر':'أنثى')+'</div></div>'+
+    '<div class="setting-row"><div class="lbl">الوزن</div><div class="val">'+profile.weight+' kg</div></div>'+
+    '<div class="setting-row"><div class="lbl">الطول</div><div class="val">'+profile.height+' cm</div></div>';
+  document.getElementById('goalEditRows').innerHTML=
+    '<div class="setting-row"><div class="lbl">🔥 السعرات</div><input class="edit-input" type="number" id="editCal" value="'+profile.cal+'"></div>'+
+    '<div class="setting-row"><div class="lbl">🥩 بروتين g</div><input class="edit-input" type="number" id="editProt" value="'+profile.protG+'"></div>'+
+    '<div class="setting-row"><div class="lbl">🍚 كارب g</div><input class="edit-input" type="number" id="editCarb" value="'+profile.carbG+'"></div>'+
+    '<div class="setting-row"><div class="lbl">🫒 دهون g</div><input class="edit-input" type="number" id="editFat" value="'+profile.fatG+'"></div>';
+  document.getElementById('newWeightSlider').value=profile.weight;
+  document.getElementById('newWeightVal').textContent=profile.weight;
+}
+document.getElementById('saveGoalsBtn').addEventListener('click',async function(){
+  profile.cal=+document.getElementById('editCal').value||profile.cal;
+  profile.protG=+document.getElementById('editProt').value||profile.protG;
+  profile.carbG=+document.getElementById('editCarb').value||profile.carbG;
+  profile.fatG=+document.getElementById('editFat').value||profile.fatG;
+  await dbPut('settings','profile',profile);
+  showToast('✅ تم حفظ الأهداف');renderHome();renderFoodProgress();
+});
+document.getElementById('newWeightSlider').addEventListener('input',function(){document.getElementById('newWeightVal').textContent=this.value;});
+document.getElementById('updateWeightBtn').addEventListener('click',async function(){
+  var newW=+document.getElementById('newWeightSlider').value;
+  profile.weight=newW;
+  var m=calcMacros(profile);
+  Object.assign(profile,m);
+  await dbPut('settings','profile',profile);
+  buildSettingsTab();renderHome();
+  showToast('✅ تم تحديث الوزن إلى '+newW+' kg');
+});
+document.getElementById('resetBtn').addEventListener('click',async function(){
+  if(!confirm('هل تريد إعادة الإعداد؟ سيتم حذف كل البيانات.')) return;
+  await dbDelete('settings','profile');location.reload();
+});
+
+// TOAST
+function showToast(msg){
+  var t=document.getElementById('toast');
+  if(!t){t=document.createElement('div');t.id='toast';
+    t.style.cssText='position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#333;color:white;padding:10px 20px;border-radius:20px;font-size:13px;z-index:999;text-align:center;transition:opacity .3s;white-space:nowrap;';
+    document.body.appendChild(t);}
+  t.textContent=msg;t.style.opacity='1';
+  clearTimeout(t._t);t._t=setTimeout(function(){t.style.opacity='0';},3000);
+}
+
+// INIT
+async function main(){
+  try{await openDB();}catch(e){console.error('DB:',e);}
+  buildWeightGrid();buildHeightGrid();
+  var p=null;
+  try{p=await dbGet('settings','profile');}catch(e){}
+  if(p){
+    document.getElementById('setup').style.display='none';
+    var app=document.getElementById('mainApp');
+    app.style.display='flex';app.style.flexDirection='column';app.style.height='100%';
+    await initApp(p);
+  }
+}
+
+if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js').catch(function(){});
+
+main();
+
+}); // end DOMContentLoaded
+</script>
+</body>
+</html>
